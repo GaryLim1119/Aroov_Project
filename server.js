@@ -21,7 +21,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+
+// 1. SERVE STATIC FILES (Crucial for Vercel)
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); 
 
 // --- SESSION SETUP ---
@@ -88,11 +90,10 @@ const upload = multer({ storage: storage });
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
-// GOOGLE STRATEGY (Updated for Vercel)
+// GOOGLE STRATEGY
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    // DYNAMIC CALLBACK URL
     callbackURL: `${process.env.BASE_URL}/auth/google/callback`
   },
   async function(accessToken, refreshToken, profile, cb) {
@@ -130,9 +131,19 @@ passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, passwor
       } catch (err) { return done(err); }
 }));
 
-// --- PAGE ROUTES ---
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/official/index.html')));
-app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public/auth/login.html')));
+// =========================================================
+// --- PAGE ROUTES (UPDATED) ---
+// =========================================================
+
+// ✅ FIXED: Points directly to public/index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// NOTE: Ensure 'auth' folder is still inside 'public' for this to work
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'auth', 'login.html'));
+});
 
 function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) return next();
@@ -450,7 +461,7 @@ app.get('/api/groups/:id', async (req, res) => {
     }
 });
 
-// --- INVITE MEMBER (Updated for Vercel) ---
+// --- INVITE MEMBER ---
 app.post('/api/groups/:id/invite', async (req, res) => {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     
