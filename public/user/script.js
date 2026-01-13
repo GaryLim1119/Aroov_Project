@@ -23,11 +23,12 @@ async function loadDestinations() {
         renderPagination(totalPages);
     } catch (err) {
         console.error("Error loading destinations:", err);
-        document.getElementById('destGrid').innerHTML = `<p style="text-align:center; padding:40px; color:red;">Failed to load data.</p>`;
+        const grid = document.getElementById('destGrid');
+        if(grid) grid.innerHTML = `<p style="text-align:center; padding:40px; color:red;">Failed to load data.</p>`;
     }
 }
 
-// --- 2. RENDER GRID (FIXED QUOTE ISSUE) ---
+// --- 2. RENDER GRID ---
 function renderGrid(data) {
     const grid = document.getElementById('destGrid');
     
@@ -40,7 +41,7 @@ function renderGrid(data) {
         const imgUrl = item.images || 'https://via.placeholder.com/400x300?text=Aroov+Trip';
         const heartClass = item.is_liked ? 'liked' : ''; 
         
-        // ✅ CRITICAL FIX: Escape quotes so HTML doesn't break
+        // SAFE STRINGIFY: Fixes the issue where buttons wouldn't click
         const safeItem = JSON.stringify(item).replace(/"/g, '&quot;');
 
         return `
@@ -71,7 +72,7 @@ function renderGrid(data) {
     `}).join('');
 }
 
-// --- 3. SHARE MODAL FUNCTIONS ---
+// --- 3. SHARE MODAL ---
 function openShareModal(item) {
     currentItemToShare = item; 
     const modal = document.getElementById('shareModal');
@@ -82,7 +83,8 @@ function openShareModal(item) {
 }
 
 function closeShareModal() {
-    document.getElementById('shareModal').classList.remove('active');
+    const modal = document.getElementById('shareModal');
+    if(modal) modal.classList.remove('active');
 }
 
 function actionCopyLink() {
@@ -106,19 +108,24 @@ function actionEmailShare() {
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-// --- 4. FETCH GROUPS FOR SHARE MODAL ---
+// --- 4. FETCH GROUPS ---
 async function fetchUserGroupsForShare() {
     const listContainer = document.getElementById('shareGroupList');
+    if(!listContainer) return;
+    
     listContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#ccc;">Syncing...</div>';
 
     try {
         const res = await fetch('/api/user/groups'); 
-        if (res.status === 401) return; // User not logged in
+        if (res.status === 401) {
+            listContainer.innerHTML = '<div style="padding:10px; text-align:center;">Please <a href="/login">login</a> to share.</div>';
+            return;
+        }
 
         const groups = await res.json();
 
         if (groups.length === 0) {
-            listContainer.innerHTML = '<div style="padding:20px; text-align:center; font-size:13px;">No groups found.<br><a href="/user/groups.html" style="color:blue;">Create one here</a></div>';
+            listContainer.innerHTML = '<div style="padding:20px; text-align:center; font-size:13px;">No groups found.<br><a href="/user/groups.html" style="color:blue;">Create a group</a></div>';
             return;
         }
 
@@ -167,7 +174,8 @@ async function addToGroup(groupId, btnElement) {
             btnElement.style.color = "white";
         }
     } catch (err) {
-        alert("Network error");
+        console.error(err);
+        alert("Network Error");
         btnElement.innerText = originalText;
         btnElement.disabled = false;
     }
@@ -188,50 +196,92 @@ async function toggleFavourite(btn, itemId) {
             headers: { 'Content-Type': 'application/json' },
             body: body
         });
+
         if (!res.ok) throw new Error("API Failed");
     } catch (err) {
+        console.error("Fav Error:", err);
         btn.classList.toggle('liked'); 
-        console.error(err);
+        alert("Connection error.");
     }
 }
 
-// --- 7. DETAILS MODAL ---
+// --- 7. DETAILS MODAL (UPDATED TO SHOW ACTIVITIES & PRICE) ---
 const detailModal = document.getElementById('detailModal');
 const modalContent = document.getElementById('modalContentInject');
 
 function openModal(item) {
-    const imgUrl = item.images || 'https://via.placeholder.com/800x450';
-    const safeItem = JSON.stringify(item).replace(/"/g, '&quot;');
-    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.state)}`;
+    if(!detailModal || !modalContent) return;
 
+    const imgUrl = item.images || 'https://via.placeholder.com/800x450';
+    // Use &quot; replacement to be extra safe with passing objects
+    const safeItem = JSON.stringify(item).replace(/"/g, '&quot;');
+    
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.state + ' Malaysia')}`;
+
+    // ✅ HERE IS THE UPDATED LAYOUT WITH ACTIVITIES, TYPE, AND PRICE
     modalContent.innerHTML = `
-        <div class="close-btn" onclick="closeDetailModal()" style="position:absolute; right:20px; top:20px; cursor:pointer; font-size:24px; color:white; background:rgba(0,0,0,0.5); width:40px; height:40px; border-radius:50%; text-align:center; line-height:40px;">×</div>
+        <div class="close-btn" onclick="closeDetailModal()" style="position:absolute; right:20px; top:20px; cursor:pointer; font-size:24px; color:white; background:rgba(0,0,0,0.5); width:40px; height:40px; border-radius:50%; text-align:center; line-height:40px; z-index:10;">×</div>
         <img src="${imgUrl}" class="modal-hero-img" style="width:100%; height:300px; object-fit:cover;">
-        <div class="modal-body" style="padding:20px;">
-            <h1 class="modal-title">${item.name}</h1>
-            <div class="modal-subtitle">📍 ${item.state} | 🏷️ ${item.type}</div>
-            <p class="modal-desc" style="margin-top:15px;">${item.description || "No description available."}</p>
-            
-            <div style="margin-top:20px;">
-                <a href="${mapUrl}" target="_blank"><button class="btn-map" style="width:100%; padding:10px;">🗺️ View on Maps</button></a>
-                <button class="btn-modal-add" style="width:100%; padding:10px; margin-top:10px; background:#555; color:white;" onclick="closeDetailModal(); openShareModal(${safeItem})">🔗 Share</button>
+        
+        <div class="modal-body" style="padding:25px;">
+            <div class="modal-flex" style="display:flex; flex-wrap:wrap; gap:20px;">
+                
+                <div class="modal-main" style="flex:2; min-width:300px;">
+                    <span style="background:#eee; padding:4px 8px; border-radius:4px; font-size:12px; text-transform:uppercase; font-weight:bold; color:#555;">${item.type}</span>
+                    <span style="margin-left:5px; color:#777; font-size:14px;">📍 ${item.state}</span>
+                    
+                    <h1 class="modal-title" style="margin-top:10px; font-size:28px;">${item.name}</h1>
+                    
+                    <p class="modal-desc" style="margin-top:15px; line-height:1.6; color:#444;">
+                        ${item.description || "No description available for this location."}
+                    </p>
+
+                    <div style="margin-top:20px; background:#f9f9f9; padding:15px; border-radius:8px;">
+                        <h4 style="margin:0 0 5px 0;">🏃🏻‍♂️ Popular Activities</h4>
+                        <p style="margin:0; color:#555;">${item.activities || "Sightseeing, Relaxation, Photography"}</p>
+                    </div>
+                </div>
+
+                <div class="modal-sidebar" style="flex:1; min-width:200px;">
+                    <div style="border:1px solid #eee; padding:15px; border-radius:8px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+                        <div style="font-size:12px; color:#888; text-transform:uppercase;">Estimated Cost</div>
+                        <div style="font-weight:bold; font-size:22px; color:#2c3e50; margin:5px 0;">RM${item.price_min} - ${item.price_max}</div>
+                        <div style="font-size:11px; color:#999;">per person / trip</div>
+                    </div>
+                    
+                    <div style="margin-top:15px;">
+                        <a href="${mapUrl}" target="_blank" style="text-decoration:none;">
+                            <button class="btn-map" style="width:100%; padding:12px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:500;">
+                                🗺️ View on Google Maps
+                            </button>
+                        </a>
+                        
+                        <button class="btn-modal-add" style="width:100%; padding:12px; margin-top:10px; background:#34495e; color:white; border:none; border-radius:5px; cursor:pointer;" onclick="closeDetailModal(); openShareModal(${safeItem})">
+                            🔗 Share / Add to Group
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     `;
     detailModal.style.display = 'flex';
 }
 
-function closeDetailModal() { detailModal.style.display = 'none'; }
+function closeDetailModal() { 
+    if(detailModal) detailModal.style.display = 'none'; 
+}
 
 // Close modals on outside click
 window.onclick = function(e) { 
     if (e.target == detailModal) closeDetailModal(); 
-    if (e.target == document.getElementById('shareModal')) closeShareModal();
+    const shareModal = document.getElementById('shareModal');
+    if (e.target == shareModal) closeShareModal();
 }
 
-// Pagination
+// Pagination logic
 function renderPagination(total) {
     const nav = document.getElementById('pagination');
+    if(!nav) return;
     nav.innerHTML = '';
     for(let i=1; i<=total; i++) {
         nav.innerHTML += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
