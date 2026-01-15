@@ -106,10 +106,12 @@ passport.deserializeUser((user, done) => {
 });
 
 // GOOGLE STRATEGY
+// GOOGLE STRATEGY
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: `${process.env.BASE_URL}/auth/google/callback`
+    callbackURL: `${process.env.BASE_URL}/auth/google/callback`,
+    proxy: true // <--- ADD THIS LINE. Crucial for Vercel!
   },
   async function(accessToken, refreshToken, profile, cb) {
       try {
