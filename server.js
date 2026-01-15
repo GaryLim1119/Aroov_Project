@@ -87,8 +87,23 @@ const upload = multer({ storage: storage });
 // =========================================================
 // --- PASSPORT CONFIG ---
 // =========================================================
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((user, done) => done(null, user));
+// Only store the essentials in the cookie to save space and keep it secure
+passport.serializeUser((user, done) => {
+    const sessionUser = {
+        id: user.id || user.user_id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        picture: user.picture
+    };
+    done(null, sessionUser);
+});
+
+passport.deserializeUser((user, done) => {
+    // In cookie-session, 'user' IS the data we saved above.
+    // We pass it straight through to req.user
+    done(null, user);
+});
 
 // GOOGLE STRATEGY
 passport.use(new GoogleStrategy({
