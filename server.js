@@ -641,31 +641,35 @@ app.post('/api/groups/vote', async (req, res) => {
     }
 });
 
-app.get('/api/user/me', (req, res) => {
+app.get('/api/user/me', async (req, res) => { // <--- Added 'async'
     // 1. Check if user is logged in
-    if (!req.session || !req.session.user) {
+    // Note: Passport uses req.user, cookie-session manual usage uses req.session.user
+    // This handles both cases:
+    const user = req.user || (req.session && req.session.user);
+
+    if (!user) {
         return res.status(401).json({ error: "Not logged in" });
     }
 
-    // 2. Use 'user_id' instead of 'id'
-    const userId = req.session.user.user_id; 
+    // 2. Use 'user_id' (or 'id' depending on how it was saved in session)
+    const userId = user.id || user.user_id; 
 
     // 3. Select 'name' and 'picture' matching your DB columns
     const sql = "SELECT name, picture FROM users WHERE user_id = ?";
     
-    db.query(sql, [userId], (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: "Database error" });
-        }
+    try {
+        // --- FIX: Use 'await' instead of a callback function ---
+        const [results] = await db.query(sql, [userId]);
         
         if (results.length > 0) {
-            // Send the exact data from the database
             res.json(results[0]); 
         } else {
             res.status(404).json({ error: "User not found" });
         }
-    });
+    } catch (err) {
+        console.error("Profile Fetch Error:", err);
+        res.status(500).json({ error: "Database error" });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
