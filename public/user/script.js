@@ -278,6 +278,56 @@ window.onclick = function(e) {
     if (e.target == shareModal) closeShareModal();
 }
 
+// --- 8. USER PROFILE & NAVBAR LOGIC ---
+
+// Fetch User Data for Navbar
+async function fetchUserProfile() {
+    try {
+        // Assuming you have an endpoint like /api/user/me that returns { username, profile_picture }
+        const res = await fetch('/api/user/me'); 
+        
+        if (res.ok) {
+            const user = await res.json();
+            
+            // Update Name
+            const nameEl = document.getElementById('navUserName');
+            if (nameEl) nameEl.textContent = user.username || "Traveler";
+
+            // Update Image (Use default if null)
+            const imgEl = document.getElementById('navUserImg');
+            if (imgEl && user.profile_picture) {
+                imgEl.src = user.profile_picture;
+            }
+        }
+    } catch (err) {
+        console.error("Failed to load user profile", err);
+    }
+}
+
+// Mobile Menu Toggle
+const menuBtn = document.getElementById('mobile-menu-btn');
+const navLinks = document.getElementById('nav-links-container');
+
+if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+        
+        // Optional: Animate hamburger bars
+        const bars = document.querySelectorAll('.bar');
+        if (navLinks.classList.contains('active')) {
+            bars[0].style.transform = 'translateY(8px) rotate(45deg)';
+            bars[1].style.opacity = '0';
+            bars[2].style.transform = 'translateY(-8px) rotate(-45deg)';
+        } else {
+            bars[0].style.transform = 'none';
+            bars[1].style.opacity = '1';
+            bars[2].style.transform = 'none';
+        }
+    });
+}
+
+
+
 // Pagination logic
 function renderPagination(total) {
     const nav = document.getElementById('pagination');
@@ -290,7 +340,10 @@ function renderPagination(total) {
 function changePage(p) { currentPage = p; loadDestinations(); }
 function applyFilters() { currentPage = 1; loadDestinations(); }
 
-// Initial Load
+
+
+// Add this to your existing DOMContentLoaded event
 document.addEventListener("DOMContentLoaded", () => {
-    loadDestinations();
+    loadDestinations(); // Your existing function
+    fetchUserProfile(); // New function
 });
