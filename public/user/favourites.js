@@ -1,6 +1,8 @@
 // /public/user/favourites.js
 
+// 1. GLOBAL VARIABLES
 let currentItemToShare = null; 
+let allFavouritesData = []; // Store all data here so we don't have to pass it in HTML
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchUserProfile(); 
@@ -8,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     highlightCurrentTab(); 
 });
 
-// --- 1. LOAD FAVOURITES ---
+// --- LOAD FAVOURITES ---
 async function loadFavourites() {
     const grid = document.getElementById('favGrid');
     
@@ -23,6 +25,10 @@ async function loadFavourites() {
         if (!res.ok) throw new Error('Failed to fetch favourites');
 
         const data = await res.json();
+        
+        // SAVE DATA GLOBALLY
+        allFavouritesData = data;
+        
         renderGrid(data);
 
     } catch (err) {
@@ -35,7 +41,7 @@ async function loadFavourites() {
     }
 }
 
-// --- 2. RENDER GRID ---
+// --- RENDER GRID ---
 function renderGrid(data) {
     const grid = document.getElementById('favGrid');
     if(!grid) return;
@@ -53,12 +59,9 @@ function renderGrid(data) {
     grid.innerHTML = data.map(item => {
         const imgUrl = item.images || 'https://via.placeholder.com/400x300?text=Aroov+Trip';
         const destId = item.dest_id || item.id;
-        
-        // SAFE STRINGIFY: Prepare data for onclick events
-        const safeItem = JSON.stringify(item).replace(/"/g, '"');
-
         const priceDisplay = item.price_min > 0 ? `RM${item.price_min} - ${item.price_max}` : 'Free';
 
+        // NOTICE: We only pass the ID now ('${destId}'), not the whole object.
         return `
         <div class="card" id="card-${destId}">
             <div class="card-image-wrapper">
@@ -75,7 +78,7 @@ function renderGrid(data) {
                     <span class="price-value">${priceDisplay}</span>
                 </div>
                 <div class="card-icons">
-                    <button class="icon-btn" onclick="openShareModal(${safeItem})">🔗</button>
+                    <button class="icon-btn" onclick="openShareModal('${destId}')">🔗</button>
                     
                     <button class="icon-btn heart-btn liked" 
                             title="Remove from Favourites"
@@ -85,14 +88,20 @@ function renderGrid(data) {
                 </div>
             </div>
 
-            <button class="btn-details" onclick="openModal(${safeItem})">
+            <button class="btn-details" onclick="openModal('${destId}')">
                 View Details
             </button>
         </div>
     `}).join('');
 }
 
-// --- 3. REMOVE FAVOURITE ---
+// --- HELPERS TO FIND DATA ---
+function getItemById(id) {
+    // We look up the item in our global array
+    return allFavouritesData.find(item => (item.dest_id || item.id) == id);
+}
+
+// --- REMOVE FAVOURITE ---
 async function removeFavourite(btn, itemId) {
     if(!confirm("Remove this trip from your favourites?")) return;
 
@@ -102,15 +111,16 @@ async function removeFavourite(btn, itemId) {
         if (res.ok) {
             const card = document.getElementById(`card-${itemId}`);
             if(card) {
-                // Animation for removal
                 card.style.transition = "all 0.3s ease";
                 card.style.opacity = '0';
                 card.style.transform = 'scale(0.9)';
                 
                 setTimeout(() => {
                     card.remove();
+                    // Update global data to match UI
+                    allFavouritesData = allFavouritesData.filter(i => (i.dest_id || i.id) != itemId);
+                    
                     const grid = document.getElementById('favGrid');
-                    // If grid is empty after removal, reload to show "No favourites" message
                     if(grid.querySelectorAll('.card').length === 0) {
                          loadFavourites(); 
                     }
@@ -124,11 +134,17 @@ async function removeFavourite(btn, itemId) {
     }
 }
 
-// --- 4. SHARE MODAL LOGIC (New) ---
+// --- SHARE MODAL LOGIC ---
 
-function openShareModal(item) {
-    currentItemToShare = (typeof item === 'string') ? JSON.parse(item) : item; 
+function openShareModal(id) {
+    // Look up the full object using the ID
+    currentItemToShare = getItemById(id);
     
+    if (!currentItemToShare) {
+        console.error("Item not found for share");
+        return;
+    }
+
     const modal = document.getElementById('shareModal');
     if(modal) {
         modal.classList.add('active'); 
@@ -143,7 +159,6 @@ function closeShareModal() {
 
 function actionCopyLink() {
     if(!currentItemToShare) return;
-    // Uses dest_id (from favourites API) or id (fallback)
     const id = currentItemToShare.dest_id || currentItemToShare.id;
     const shareUrl = `${window.location.origin}/destination?id=${id}`;
     
@@ -206,7 +221,6 @@ async function addToGroup(groupId, btnElement) {
     btnElement.innerText = "...";
     btnElement.disabled = true;
 
-    // Determine ID (Favourites API usually returns dest_id, but handles fallbacks)
     const destId = currentItemToShare.dest_id || currentItemToShare.id;
 
     try {
@@ -235,17 +249,21 @@ async function addToGroup(groupId, btnElement) {
     }
 }
 
-// --- 5. DETAILS MODAL ---
+// --- DETAILS MODAL ---
 const detailModal = document.getElementById('detailModal');
 const modalContent = document.getElementById('modalContentInject');
 
-function openModal(item) {
+function openModal(id) {
     if(!detailModal || !modalContent) return;
 
-    const dest = (typeof item === 'string') ? JSON.parse(item) : item;
-    const safeItem = JSON.stringify(dest).replace(/"/g, '"');
+    // Look up data by ID instead of parsing string
+    const dest = getItemById(id);
+    if (!dest) return;
+
     const imgUrl = dest.images || 'https://via.placeholder.com/800x450';
-    const mapUrl = `http://googleusercontent.com/maps.google.com/4{encodeURIComponent(dest.name + ' ' + dest.state + ' Malaysia')}`;
+    // Fixed the Map URL syntax
+    const mapQuery = encodeURIComponent(`${dest.name} ${dest.state} Malaysia`);
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
 
     modalContent.innerHTML = `
         <div class="close-btn" onclick="closeDetailModal()" style="position:absolute; right:20px; top:20px; cursor:pointer; font-size:24px; color:white; background:rgba(0,0,0,0.5); width:40px; height:40px; border-radius:50%; text-align:center; line-height:40px; z-index:10;">×</div>
@@ -268,7 +286,7 @@ function openModal(item) {
                         <a href="${mapUrl}" target="_blank" style="text-decoration:none;">
                             <button class="btn-map" style="width:100%; padding:12px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:500;">🗺️ Google Maps</button>
                         </a>
-                        <button class="btn-modal-add" style="width:100%; padding:12px; margin-top:10px; background:#34495e; color:white; border:none; border-radius:5px; cursor:pointer;" onclick="closeDetailModal(); openShareModal(${safeItem})">
+                        <button class="btn-modal-add" style="width:100%; padding:12px; margin-top:10px; background:#34495e; color:white; border:none; border-radius:5px; cursor:pointer;" onclick="closeDetailModal(); openShareModal('${dest.dest_id || dest.id}')">
                             🔗 Share
                         </button>
                     </div>
@@ -283,9 +301,8 @@ function closeDetailModal() {
     if(detailModal) detailModal.style.display = 'none'; 
 }
 
-// --- 6. GLOBAL HELPERS ---
+// --- GLOBAL HELPERS ---
 
-// Highlight Active Tab
 function highlightCurrentTab() {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.nav-links a');
@@ -303,7 +320,6 @@ function highlightCurrentTab() {
     }
 }
 
-// Global Click Handler (Closes Modals)
 window.onclick = function(event) {
     const detailModal = document.getElementById('detailModal');
     const shareModal = document.getElementById('shareModal');
@@ -312,7 +328,7 @@ window.onclick = function(event) {
     if (event.target == shareModal) closeShareModal();
 }
 
-// --- 7. NAVBAR & USER ---
+// --- NAVBAR & USER ---
 async function fetchUserProfile() {
     try {
         const res = await fetch('/api/user/me'); 
