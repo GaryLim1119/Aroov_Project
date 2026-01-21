@@ -297,89 +297,96 @@ app.put('/api/user/profile', checkAuthenticated, async (req, res) => {
 });
 
 // 5. [GET] Fetch Combined Calendar (Personal + University)
+// 5. [GET] Fetch Combined Calendar (Safe Version)
 app.get('/api/user/calendar', checkAuthenticated, async (req, res) => {
     const userId = req.user.id || req.user.user_id;
 
     try {
-        // 1. Get the user's University ID
+        // 1. Get University ID
         const [userRows] = await db.query("SELECT university_id FROM users WHERE user_id = ?", [userId]);
         const uniId = userRows[0]?.university_id;
 
         // 2. Fetch Personal Availability
-        const [personalRows] = await db.query(
-            "SELECT avail_id, start_date, end_date, note FROM user_availability WHERE user_id = ?", 
-            [userId]
-        );
+        const [personalRows] = await db.query("SELECT * FROM user_availability WHERE user_id = ?", [userId]);
 
         // 3. Fetch University Schedules
         let uniRows = [];
         if (uniId) {
-            // WE SPECIFICALLY SELECT COLUMNS HERE to avoid 'undefined' errors
-            const [rows] = await db.query(
-                `SELECT event_type, event_name, start_date, end_date 
-                 FROM university_schedules 
-                 WHERE university_id = ?`, 
-                [uniId]
-            );
+            // Using '*' covers all column names
+            const [rows] = await db.query("SELECT * FROM university_schedules WHERE university_id = ?", [uniId]);
             uniRows = rows;
         }
 
-        // --- DEBUGGING: Print the first uni event found ---
-        if (uniRows.length > 0) {
-            console.log("Debug Uni Event:", uniRows[0]); 
-        } else {
-            console.log("No university events found for Uni ID:", uniId);
-        }
-        // --------------------------------------------------
+        // --- DEBUG LOG: Check your terminal for this! ---
+        console.log("------------------------------------------------");
+        console.log(`Uni ID: ${uniId}`);
+        if(uniRows.length > 0) console.log("First Uni Event (Raw DB):", uniRows[0]);
+        // ------------------------------------------------
 
-        const toDateStr = (d) => new Date(d).toISOString().split('T')[0];
         const events = [];
+
+        // Helper: safely convert date to YYYY-MM-DD
+        const safeDate = (d) => {
+            if (!d) return null;
+            // If it's already a string, take the first 10 chars
+            if (typeof d === 'string') return d.substring(0, 10);
+            // If it's a JS Date object
+            try { return d.toISOString().split('T')[0]; } catch(e) { return null; }
+        };
 
         // -- Process Personal Events --
         personalRows.forEach(row => {
-            events.push({
-                id: row.avail_id,
-                title: row.note || 'Available',
-                start: toDateStr(row.start_date),
-                end: toDateStr(row.end_date),
-                display: 'background',
-                backgroundColor: '#22c55e', 
-                allDay: true,
-                extendedProps: { type: 'user_busy' }
-            });
+            const s = safeDate(row.start_date);
+            const e = safeDate(row.end_date);
+            if(s && e) {
+                events.push({
+                    id: row.avail_id,
+                    title: row.note || 'Available',
+                    start: s,
+                    end: e,
+                    display: 'background',
+                    backgroundColor: '#22c55e', // Green
+                    allDay: true
+                });
+            }
         });
 
         // -- Process University Events --
         uniRows.forEach((row, index) => {
-            // Fallback: If event_type is missing, try to detect it or default to 'Event'
-            const type = row.event_type || "Event";
-            const name = row.event_name || "University Event";
-
-            let color = '#3b82f6'; // Default Blue
+            const s = safeDate(row.start_date);
+            const e = safeDate(row.end_date);
             
-            // Flexible matching (handles 'Exam', 'exam', 'Finals', etc.)
-            const typeLower = type.toLowerCase();
+            // Fix "undefined" names by checking multiple possible column names
+            // Check row.event_type OR row.type OR row.category
+            const type = row.event_type || row.type || row.category || "Event";
+            const name = row.event_name || row.name || row.title || "University Event";
+
+            // Determine Color
+            let color = '#3b82f6'; // Default Blue
+            const typeLower = String(type).toLowerCase(); // safe lowercase
+            
             if (typeLower.includes('exam')) color = '#ef4444';       // Red
             else if (typeLower.includes('break')) color = '#22c55e'; // Green
             else if (typeLower.includes('holiday')) color = '#f59e0b'; // Orange
 
-            events.push({
-                id: `uni-${index}`,
-                title: `${type}: ${name}`,
-                start: toDateStr(row.start_date),
-                end: toDateStr(row.end_date),
-                display: 'background',
-                backgroundColor: color,
-                allDay: true,
-                editable: false,
-                extendedProps: { type: 'uni_schedule' }
-            });
+            if(s && e) {
+                events.push({
+                    id: `uni-${index}`,
+                    title: `${type}: ${name}`,
+                    start: s,
+                    end: e,
+                    display: 'background',
+                    backgroundColor: color,
+                    allDay: true,
+                    editable: false
+                });
+            }
         });
 
         res.json(events);
 
     } catch (err) {
-        console.error("Error fetching calendar:", err);
+        console.error("CRITICAL ERROR in Calendar Route:", err);
         res.status(500).json([]);
     }
 });
