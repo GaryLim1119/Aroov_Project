@@ -15,6 +15,39 @@ async function fetchAPI(url, options = {}) {
     return data;
 }
 
+// --- RUN THIS ON LOAD ---
+document.addEventListener('DOMContentLoaded', () => {
+    // ... your existing fetchUser / loadData calls ...
+    
+    highlightCurrentTab(); // <--- ADD THIS LINE
+});
+
+// --- FUNCTION TO HIGHLIGHT ACTIVE TAB ---
+function highlightCurrentTab() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    // 1. Remove 'active' class from ALL links first
+    navLinks.forEach(link => link.classList.remove('active'));
+
+    // 2. Add 'active' class based on the URL
+    if (currentPath.includes('favourites.html')) {
+        // Find the Favourites link
+        const favLink = document.querySelector('a[href*="favourites"]');
+        if (favLink) favLink.classList.add('active');
+
+    } else if (currentPath.includes('groups.html')) {
+        // Find the Groups link
+        const groupLink = document.querySelector('a[href*="groups"]');
+        if (groupLink) groupLink.classList.add('active');
+
+    } else {
+        // Default to "Explore" (for /user or /user/index.html)
+        const exploreLink = document.querySelector('a[href="/user"]');
+        if (exploreLink) exploreLink.classList.add('active');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     fetchUserProfile(); // Add this line
     loadGroups();       // Your existing function
