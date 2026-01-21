@@ -1,15 +1,11 @@
-let calendarInstance = null;
-let selectedDates = null; // Store dates from drag selection
-
 document.addEventListener('DOMContentLoaded', function() {
     
-    // --- GLOBAL VARIABLES (To store data not in the form) ---
+    // --- GLOBAL VARIABLES ---
     let allUniversities = [];
     let currentUserData = {
-        role: 'student',       // Default
+        role: 'student',       
         budget_min: 0,
-        budget_max: 1000,
-        email: ''
+        budget_max: 1000
     };
 
     // ==========================================
@@ -25,7 +21,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 2. FETCH UNIVERSITIES
+    // 2. ROLE & UNIVERSITY LOGIC
+    // ==========================================
+    const uniSection = document.getElementById('uni-section');
+    const roleRadios = document.querySelectorAll('input[name="role"]');
+
+    function toggleUniversityField(role) {
+        if (role === 'student') {
+            uniSection.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+        } else {
+            uniSection.classList.add('hidden', 'opacity-50', 'pointer-events-none');
+            // Optional: clear the selection if they switch to General
+            document.getElementById('university-id').value = '';
+            document.getElementById('uni-selected-text').textContent = 'Select University...';
+        }
+        currentUserData.role = role;
+    }
+
+    roleRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            toggleUniversityField(e.target.value);
+        });
+    });
+
+    // ==========================================
+    // 3. FETCH UNIVERSITIES
     // ==========================================
     const uniTrigger = document.getElementById('uni-dropdown-trigger');
     const uniList = document.getElementById('uni-dropdown-list');
@@ -87,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 3. TAGS LOGIC
+    // 4. TAGS LOGIC
     // ==========================================
     function setupTagGroup(btnClass, inputId) {
         const btns = document.querySelectorAll(btnClass);
@@ -96,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.addEventListener('click', () => {
                 btn.classList.toggle('selected');
                 const selected = Array.from(document.querySelectorAll(`${btnClass}.selected`)).map(b => b.dataset.val);
-                input.value = JSON.stringify(selected); // Store as JSON string for your backend
+                input.value = JSON.stringify(selected); 
             });
         });
     }
@@ -105,100 +125,145 @@ document.addEventListener('DOMContentLoaded', function() {
     setupTagGroup('.act-btn', 'activities-input');
 
     // ==========================================
-    // 4. CALENDAR LOGIC
+    // 5. CALENDAR LOGIC (ROBUST VERSION)
     // ==========================================
     const calendarEl = document.getElementById('calendar');
+    
     if (calendarEl) {
         const modal = document.getElementById('event-modal');
         const modalRange = document.getElementById('modal-date-range');
         const noteInput = document.getElementById('event-note');
         const saveAvailBtn = document.getElementById('save-avail-btn');
         const closeModalBtn = document.getElementById('close-modal-btn');
-        let currentSelection = null; 
+        
+        // This stores the info from FullCalendar when you select dates
+        let currentSelectionInfo = null; 
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             selectable: true,
             headerToolbar: { left: 'prev', center: 'title', right: 'next' },
             events: '/api/user/calendar',
+            
+            // 1. User selects dates
             select: function(info) {
-                currentSelection = info;
+                currentSelectionInfo = info; // Store info globally
+                
+                // Format date for display
                 let endDate = new Date(info.endStr);
                 endDate.setDate(endDate.getDate() - 1);
                 modalRange.innerText = `${info.startStr} to ${endDate.toISOString().split('T')[0]}`;
+                
+                // Show Modal
                 modal.classList.remove('hidden');
             },
+
+            // 2. Click to Delete
             eventClick: async function(info) {
-                if (info.event.extendedProps.type === 'user_busy') { // Changed to match your backend type
+                if (info.event.extendedProps.type === 'user_busy') { 
                     if (confirm('Delete this busy slot?')) {
-                        await fetch(`/api/user/availability/${info.event.id}`, { method: 'DELETE' });
-                        info.event.remove();
+                        try {
+                            const res = await fetch(`/api/user/availability/${info.event.id}`, { method: 'DELETE' });
+                            if(res.ok) info.event.remove();
+                            else alert("Could not delete.");
+                        } catch(e) { console.error(e); }
                     }
                 }
             }
         });
         calendar.render();
 
-        if(closeModalBtn) closeModalBtn.addEventListener('click', () => { modal.classList.add('hidden'); calendar.unselect(); });
+        // Close Modal Logic
+        if(closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => { 
+                modal.classList.add('hidden'); 
+                calendar.unselect(); 
+                currentSelectionInfo = null;
+            });
+        }
 
+        // Save Availability Logic
         if(saveAvailBtn) {
-            saveAvailBtn.addEventListener('click', async () => {
-                if (!currentSelection) return;
+            saveAvailBtn.addEventListener('click', async (e) => {
+                // Prevent default behavior (stops form submission if accidental)
+                e.preventDefault(); 
+                
+                console.log("Confirm button clicked"); // Check your Console F12 if this appears
+
+                if (!currentSelectionInfo) {
+                    alert("No dates selected! Please drag on the calendar first.");
+                    modal.classList.add('hidden');
+                    return;
+                }
+
+                saveAvailBtn.innerText = "Saving...";
+                
+                const payload = {
+                    start_date: currentSelectionInfo.startStr,
+                    end_date: currentSelectionInfo.endStr,
+                    note: noteInput.value
+                };
+
                 try {
                     const res = await fetch('/api/user/availability', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            start_date: currentSelection.startStr,
-                            end_date: currentSelection.endStr,
-                            note: noteInput.value
-                        })
+                        body: JSON.stringify(payload)
                     });
-                    if(res.ok) { calendar.refetchEvents(); modal.classList.add('hidden'); noteInput.value=''; }
-                } catch(e) { console.error(e); }
+
+                    if(res.ok) {
+                        calendar.refetchEvents(); // Refresh calendar
+                        modal.classList.add('hidden'); 
+                        noteInput.value = '';
+                        currentSelectionInfo = null;
+                        console.log("Availability saved successfully");
+                    } else {
+                        const txt = await res.text();
+                        console.error("Server Error:", txt);
+                        alert("Error saving: " + txt);
+                    }
+                } catch(err) {
+                    console.error("Network Error:", err);
+                    alert("Network error. Please check your connection.");
+                } finally {
+                    saveAvailBtn.innerText = "Confirm";
+                }
             });
         }
     }
 
     // ==========================================
-    // 5. SHARED SAVE FUNCTION (Handles Profile & Password)
+    // 6. SHARED SAVE FUNCTION
     // ==========================================
     async function saveProfileData(password = null) {
-        // Collect current form data
+        // Collect Tags
         let typesVal = document.getElementById('types-input').value;
         let actsVal = document.getElementById('activities-input').value;
 
-        // Ensure we send Arrays if the input is a JSON string, or keep as is
-        // Your backend expects: JSON.stringify(preferred_types) inside the backend code?
-        // Wait, your backend does: JSON.stringify(preferred_types) inside the SQL params.
-        // So we should send the raw ARRAY or String? 
-        // If your backend says `JSON.stringify(preferred_types)`, it expects an OBJECT/ARRAY from req.body.
-        
         let typesPayload = [];
         let actsPayload = [];
         try { typesPayload = JSON.parse(typesVal || "[]"); } catch(e) { typesPayload = []; }
         try { actsPayload = JSON.parse(actsVal || "[]"); } catch(e) { actsPayload = []; }
+
+        // Get Role directly from Checked Radio
+        const selectedRoleEl = document.querySelector('input[name="role"]:checked');
+        const roleValue = selectedRoleEl ? selectedRoleEl.value : 'student';
 
         const payload = {
             name: document.getElementById('display-name').value,
             university_id: document.getElementById('university-id').value,
             preferred_types: typesPayload,
             preferred_activities: actsPayload,
-            
-            // Include HIDDEN fields required by your Backend
-            role: currentUserData.role,
+            role: roleValue, 
             budget_min: currentUserData.budget_min,
             budget_max: currentUserData.budget_max
         };
 
-        // If updating password, add it
-        if (password) {
-            payload.password = password;
-        }
+        if (password) payload.password = password;
 
         try {
             const res = await fetch('/api/user/profile', {
-                method: 'PUT', // <--- FIXED: Changed to PUT to match server.js
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
@@ -221,10 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 6. EVENT LISTENERS FOR FORMS
+    // 7. EVENT LISTENERS FOR FORMS
     // ==========================================
-    
-    // A. Profile Form
     const profileForm = document.getElementById('profile-form');
     if(profileForm) {
         profileForm.addEventListener('submit', async (e) => {
@@ -236,7 +299,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // B. Password Form
     const passForm = document.getElementById('password-form');
     if(passForm) {
         passForm.addEventListener('submit', async (e) => {
@@ -253,22 +315,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 7. INITIAL DATA LOAD
+    // 8. INITIAL DATA LOAD
     // ==========================================
     async function loadData() {
-        await loadUniversities(); // Load options first
+        await loadUniversities(); 
 
         try {
             const res = await fetch('/api/user/profile');
             if(res.ok) {
                 const data = await res.json();
                 
-                // 1. Store Global Data (Required for saving later)
                 currentUserData.role = data.role || 'student';
                 currentUserData.budget_min = data.budget_min || 0;
                 currentUserData.budget_max = data.budget_max || 1000;
 
-                // 2. Populate UI
+                // 1. Set Radio Button
+                const roleRadio = document.querySelector(`input[name="role"][value="${currentUserData.role}"]`);
+                if(roleRadio) {
+                    roleRadio.checked = true;
+                    toggleUniversityField(currentUserData.role);
+                }
+
+                // 2. Basic Info
                 document.getElementById('display-name').value = data.name;
                 document.getElementById('navUserName').textContent = data.name;
                 if(data.picture) {
@@ -276,19 +344,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('profile-pic-preview').src = data.picture;
                 }
 
-                // 3. Select University
+                // 3. University
                 if(data.university_id) {
                     const uni = allUniversities.find(u => u.university_id == data.university_id);
                     if(uni) selectUniversity(uni.university_id, uni.name);
                 }
 
-                // 4. Populate Tags
-                // Handle case where data comes as string or JSON object
+                // 4. Tags
                 let types = [];
                 let activities = [];
 
                 if (typeof data.preferred_types === 'string') {
-                    // Try parsing if it's a JSON string
                     try { types = JSON.parse(data.preferred_types); } catch(e) { types = data.preferred_types.split(','); }
                 } else if (Array.isArray(data.preferred_types)) {
                     types = data.preferred_types;
@@ -300,7 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     activities = data.preferred_activities;
                 }
 
-                // Activate buttons
                 document.querySelectorAll('.type-btn').forEach(btn => {
                     if(types.includes(btn.dataset.val)) btn.classList.add('selected');
                 });
@@ -324,8 +389,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const reader = new FileReader();
                 reader.onload = (e) => previewImg.src = e.target.result;
                 reader.readAsDataURL(file);
-                // Note: Actual image upload requires a separate FormData handling or Base64 logic
-                // For now, this just previews it.
             }
         });
     }

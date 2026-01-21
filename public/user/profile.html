@@ -52,7 +52,21 @@
                         <input type="text" id="display-name" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none" placeholder="Your Name">
                     </div>
 
-                    <div class="relative">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">I am a...</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center space-x-2 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex-1 transition">
+                                <input type="radio" name="role" value="student" class="text-[#ff5a5f] focus:ring-[#ff5a5f]" checked>
+                                <span class="font-medium text-gray-700">Student</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex-1 transition">
+                                <input type="radio" name="role" value="general" class="text-[#ff5a5f] focus:ring-[#ff5a5f]">
+                                <span class="font-medium text-gray-700">Traveler</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="uni-section" class="relative transition-all duration-300">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">University</label>
                         <div id="uni-dropdown-trigger" class="w-full p-3 border border-gray-200 rounded-lg bg-white flex justify-between items-center cursor-pointer hover:border-[#ff5a5f] transition">
                             <span id="uni-selected-text" class="text-gray-500">Select University...</span>
@@ -129,8 +143,8 @@
             <p id="modal-date-range" class="text-green-600 font-medium text-sm mb-4">...</p>
             <input type="text" id="event-note" class="w-full p-3 border rounded-lg mb-6" placeholder="Note (e.g. Free after 2pm)">
             <div class="flex gap-3">
-                <button id="close-modal-btn" class="flex-1 py-3 bg-gray-100 rounded-xl">Cancel</button>
-                <button id="save-avail-btn" class="flex-1 py-3 text-white bg-green-500 rounded-xl">Confirm</button>
+                <button id="close-modal-btn" class="flex-1 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition">Cancel</button>
+                <button id="save-avail-btn" class="flex-1 py-3 text-white bg-green-500 rounded-xl hover:bg-green-600 transition shadow-lg">Confirm</button>
             </div>
         </div>
     </div>
