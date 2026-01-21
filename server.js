@@ -354,8 +354,8 @@ app.get('/api/user/calendar', checkAuthenticated, async (req, res) => {
         // -- Process University Events --
         uniRows.forEach((row, index) => {
             let color = '#3b82f6'; // Default Blue
-            if (row.event_type === 'Exam') color = '#ef4444'; // Red
-            if (row.event_type === 'Semester Break') color = '#22c55e'; // Green
+            if (row.event_type === 'exam') color = '#ef4444'; // Red
+            if (row.event_type === 'semester_break') color = '#22c55e'; // Green
 
             events.push({
                 id: `uni-${index}`,
