@@ -307,4 +307,55 @@ a { text-decoration: none; }
         justify-content: center;
         padding: 8px;
     }
+
+    .header-section {
+        flex-direction: column;
+        align-items: stretch; /* Stretches items to full width */
+        gap: 15px; /* Adds space between text and search bar */
+        margin-bottom: 30px;
+    }
+
+    /* 2. Adjust text size for small screens */
+    .header-text h1 {
+        font-size: 26px;
+        text-align: center; /* Looks cleaner on mobile */
+    }
+    .header-text p {
+        text-align: center;
+        font-size: 14px;
+    }
+
+    /* 3. Make Search Bar Full Width & Touch Friendly */
+    .search-bar {
+        width: 100%;
+        padding: 6px 6px 6px 15px; /* Tighter padding for mobile */
+        gap: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08); /* Slightly stronger shadow for depth */
+    }
+
+    /* 4. Make the text input fill the available space */
+    .search-bar input {
+        flex: 1; /* Grows to fill space */
+        width: 100%; 
+        min-width: 0; /* Prevents overflow issues */
+        font-size: 15px; /* Readable text size */
+    }
+
+    /* 5. Limit the dropdown width so it doesn't crush the input */
+    .search-bar select {
+        max-width: 100px; /* Optional: Constrain "Type" dropdown */
+        font-size: 13px;
+    }
+
+    /* 6. Adjust Search Button size */
+    .search-btn {
+        width: 38px;
+        height: 38px;
+    }
+    
+    /* 7. Fix container padding so edges aren't too tight */
+    .container {
+        padding: 20px;
+    }
 }
+
