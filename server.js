@@ -297,43 +297,40 @@ app.put('/api/user/profile', checkAuthenticated, async (req, res) => {
 });
 
 // 4. Get Calendar Data (University + Personal)
+// 5. [GET] Fetch User Calendar Events
 app.get('/api/user/calendar', checkAuthenticated, async (req, res) => {
     const userId = req.user.id || req.user.user_id;
-    let events = [];
 
     try {
-        // A. Fetch Personal Busy Dates - UPDATED: Include avail_id
-        const [personalRows] = await db.query("SELECT avail_id, start_date, end_date, note FROM user_availability WHERE user_id = ?", [userId]);
-        
-        events = events.concat(personalRows.map(r => ({
-            id: r.avail_id, // Needed for deletion
-            title: r.note || "Busy",
-            start: r.start_date,
-            end: r.end_date, 
-            color: "#555", // Grey
-            extendedProps: { type: 'user_busy' },
-            display: 'background'
-        })));
+        // We use DATE_FORMAT to ensure Node doesn't shift the timezone
+        const [rows] = await db.query(
+            `SELECT 
+                avail_id, 
+                DATE_FORMAT(start_date, '%Y-%m-%d') as start, 
+                DATE_FORMAT(end_date, '%Y-%m-%d') as end, 
+                note 
+             FROM user_availability 
+             WHERE user_id = ?`,
+            [userId]
+        );
 
-        // B. Fetch University Events (If user is a student)
-        const [userRows] = await db.query("SELECT university_id FROM users WHERE user_id = ?", [userId]);
-        const uniId = userRows[0]?.university_id;
-
-        if (uniId) {
-            const [uniRows] = await db.query("SELECT event_name, start_date, end_date, type FROM university_schedules WHERE university_id = ?", [uniId]);
-            
-            events = events.concat(uniRows.map(r => ({
-                title: r.event_name,
-                start: r.start_date,
-                end: r.end_date,
-                color: r.type === 'semester_break' ? "#2ecc71" : "#e74c3c" // Green vs Red
-            })));
-        }
+        // Map DB results to FullCalendar Event Objects
+        const events = rows.map(row => ({
+            id: row.avail_id,
+            title: row.note || 'Available',
+            start: row.start,
+            end: row.end,
+            display: 'background',     // This makes the whole day cell colored
+            backgroundColor: '#22c55e', // Green color (Tailwind green-500)
+            extendedProps: { 
+                type: 'user_busy'      // Used by frontend to allow deletion
+            }
+        }));
 
         res.json(events);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Calendar Error" });
+        console.error("Error fetching calendar:", err);
+        res.status(500).json([]);
     }
 });
 
