@@ -836,6 +836,18 @@ app.get('/api/user/me', async (req, res) => {
     }
 });
 
+
+app.get('/api/universities', async (req, res) => {
+    try {
+        // SQL: SELECT id, name FROM universities
+        const results = await db.query('SELECT * FROM universities'); 
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: "Db error" });
+    }
+});
+
+
 // GET: Fetch Calendar Events (Uni Events + User Availability)
 app.get('/api/user/calendar', isAuthenticated, async (req, res) => {
     try {
