@@ -3,337 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile - Aroov</title>
+    <title>My Profile - Aroov</title>
     
+    <link rel="stylesheet" href="profile.css">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-    <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #ff5a5f; border-radius: 4px; }
-        
-        /* Transitions */
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; }
-        .slide-enter-active, .slide-leave-active { transition: transform 0.3s ease-out; }
-        .slide-enter-from, .slide-leave-to { transform: translateY(-20px); opacity: 0; }
-
-        /* Calendar Mobile Tweaks */
-        @media (max-width: 768px) {
-            .fc-toolbar { flex-direction: column; gap: 0.5rem; }
-            .fc-toolbar-title { font-size: 1.2rem !important; }
-            .fc-view-harness { min-height: 400px; }
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50">
 
-    <div id="app">
+    <nav class="navbar">
+        <div class="logo">Aroov Trip.</div>
 
-        <nav class="bg-white shadow-sm sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <span class="text-2xl font-bold text-[#ff5a5f]">Aroov Trip</span>
-                    </div>
-
-                    <div class="hidden md:flex items-center space-x-6">
-                        <a href="/user" class="text-gray-900 font-medium border-b-2 border-[#ff5a5f]">Profile</a>
-                        <a href="/user/groups.html" class="text-gray-500 hover:text-gray-900 transition">Groups</a>
-                        <div class="flex items-center space-x-2 pl-4 border-l border-gray-200">
-                            <img :src="user.picture || 'https://via.placeholder.com/40'" class="h-8 w-8 rounded-full border border-gray-200 object-cover">
-                            <span class="text-sm font-medium text-gray-700">{{ user.name }}</span>
-                        </div>
-                        <a href="/logout" class="text-sm text-[#ff5a5f] hover:text-red-700 font-medium">Logout</a>
-                    </div>
-
-                    <div class="flex items-center md:hidden">
-                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-600 hover:text-[#ff5a5f] focus:outline-none p-2">
-                            <i class="fa-solid fa-bars text-xl"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <Transition name="slide">
-                <div v-if="mobileMenuOpen" class="md:hidden bg-white border-t border-gray-100 shadow-lg absolute w-full left-0 z-50">
-                    <div class="px-4 py-3 space-y-3">
-                        <div class="flex items-center space-x-3 pb-3 border-b border-gray-100">
-                            <img :src="user.picture || 'https://via.placeholder.com/40'" class="h-10 w-10 rounded-full border border-gray-200">
-                            <div>
-                                <p class="font-medium text-gray-900">{{ user.name }}</p>
-                                <p class="text-xs text-gray-500">{{ user.email }}</p>
-                            </div>
-                        </div>
-                        <a href="/user" class="block text-[#ff5a5f] font-medium">Profile</a>
-                        <a href="/user/groups.html" class="block text-gray-600 hover:text-gray-900">Groups</a>
-                        <a href="/logout" class="block text-red-500 font-medium">Logout</a>
-                    </div>
-                </div>
-            </Transition>
-        </nav>
-
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                <div class="space-y-6">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h2 class="text-lg font-bold text-gray-900 mb-4">Edit Profile</h2>
-
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Display Name</label>
-                                <input v-model="form.name" type="text" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#ff5a5f] outline-none">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Role</label>
-                                <div class="flex bg-gray-100 p-1 rounded-lg">
-                                    <button @click="form.role = 'student'" :class="{'bg-white shadow-sm text-[#ff5a5f] font-bold': form.role === 'student', 'text-gray-500': form.role !== 'student'}" class="flex-1 py-2 text-sm rounded-md transition-all">Student 🎓</button>
-                                    <button @click="form.role = 'traveller'" :class="{'bg-white shadow-sm text-[#ff5a5f] font-bold': form.role === 'traveller', 'text-gray-500': form.role !== 'traveller'}" class="flex-1 py-2 text-sm rounded-md transition-all">Traveller ✈️</button>
-                                </div>
-                            </div>
-
-                            <div v-if="form.role === 'student'" class="transition-all">
-                                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">University</label>
-                                <select v-model="form.university_id" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#ff5a5f] outline-none">
-                                    <option :value="null">Select University...</option>
-                                    <option v-for="uni in universities" :key="uni.university_id" :value="uni.university_id">{{ uni.name }}</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Trip Budget (RM)</label>
-                                <div class="flex gap-2">
-                                    <input v-model="form.budget_min" type="number" placeholder="Min" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center">
-                                    <input v-model="form.budget_max" type="number" placeholder="Max" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center">
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Interests</label>
-                                <div class="flex flex-wrap gap-2">
-                                    <span v-for="type in tripTypes" :key="type" 
-                                          @click="togglePreference('preferred_types', type)"
-                                          :class="form.preferred_types.includes(type) ? 'bg-[#ff5a5f] text-white' : 'bg-gray-100 text-gray-600'"
-                                          class="px-3 py-1 rounded-full text-xs cursor-pointer select-none transition">
-                                        {{ type }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <button @click="updateProfile" class="w-full bg-[#ff5a5f] text-white font-bold py-3 rounded-lg shadow-sm hover:bg-[#ff4449] active:scale-95 transition">
-                                Save Profile
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-2">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900">Availability Calendar</h3>
-                                <div class="flex gap-3 mt-1 text-xs text-gray-500">
-                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#2ecc71]"></div> Available</span>
-                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-[#ff5a5f]"></div> Uni Event</span>
-                                </div>
-                            </div>
-                            <div class="bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-xs w-full sm:w-auto border border-blue-100">
-                                <i class="fa-solid fa-circle-info mr-1"></i>
-                                <span class="hidden md:inline">Click and drag to mark dates.</span>
-                                <span class="md:hidden"><strong>Long press</strong> and drag to mark dates.</span>
-                            </div>
-                        </div>
-
-                        <div id='calendar' class="text-sm min-h-[400px]"></div>
-                    </div>
-                </div>
-
-            </div>
+        <div class="menu-toggle" id="mobile-menu-btn">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
         </div>
 
-        <Transition name="fade">
-            <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-                <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm transform transition-all">
-                    <div class="text-center mb-4">
-                        <div class="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
-                            <i class="fa-solid fa-calendar-check text-green-600 text-xl"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-900">Mark as Available?</h3>
-                        <p class="text-sm text-gray-500 mt-1">{{ selectedDateDisplay }}</p>
-                    </div>
+        <div class="nav-links" id="nav-links-container">
+            <a href="/user/index.html">Explore</a>
+            <a href="/user/favourites.html">Favourites</a>
+            <a href="/user/groups.html">Groups</a>
 
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1 text-left">Note (Optional)</label>
-                    <input v-model="availabilityNote" type="text" placeholder="e.g. Free after 2pm" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-5 focus:outline-none focus:border-[#ff5a5f]">
+            <a href="/user/profile.html" class="profile-chip active">
+                <img src="/default-avatar.png" id="navUserImg" alt="Profile">
+                <span id="navUserName">Loading...</span>
+            </a>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <button @click="closeModal" class="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg font-medium hover:bg-gray-50">Cancel</button>
-                        <button @click="saveAvailability" class="px-4 py-2 bg-[#2ecc71] text-white rounded-lg font-medium hover:bg-green-600 shadow-sm">Confirm</button>
+            <a href="/logout" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="pt-24 pb-12 max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
+            <h2 class="text-xl font-bold mb-6 text-gray-800">Edit Profile</h2>
+
+            <div class="flex flex-col items-center mb-6">
+                <div class="w-32 h-32 rounded-full bg-gray-100 overflow-hidden border-4 border-white shadow-md relative group cursor-pointer">
+                    <img id="profile-pic-preview" src="/default-avatar.png" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center text-white text-sm font-medium transition">
+                        <i class="fa-solid fa-camera mr-1"></i> Change
                     </div>
+                    <input type="file" id="profile-upload" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10">
                 </div>
             </div>
-        </Transition>
 
+            <form id="profile-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Display Name</label>
+                    <input type="text" id="display-name" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#ff5a5f] outline-none" placeholder="Your Name">
+                </div>
+
+                <div class="relative">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">University</label>
+                    <div id="uni-dropdown-trigger" class="w-full p-3 border border-gray-200 rounded-lg bg-white flex justify-between items-center cursor-pointer hover:border-[#ff5a5f] transition">
+                        <span id="uni-selected-text" class="text-gray-500">Select your university...</span>
+                        <i class="fa-solid fa-chevron-down text-gray-400 text-sm"></i>
+                    </div>
+                    <input type="hidden" id="university-id" name="university_id">
+                    
+                    <div id="uni-dropdown-list" class="hidden absolute z-30 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-hidden flex flex-col">
+                        <div class="p-2 border-b border-gray-100">
+                            <input type="text" id="uni-search" class="w-full p-2 text-sm bg-gray-50 rounded-md outline-none" placeholder="Search...">
+                        </div>
+                        <div id="uni-options-container" class="overflow-y-auto flex-1"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Activities & Travel Types</label>
+                    <div class="flex flex-wrap gap-2" id="tags-container">
+                        <button type="button" class="tag-btn" data-val="Hiking">🥾 Hiking</button>
+                        <button type="button" class="tag-btn" data-val="Foodie">🍔 Foodie</button>
+                        <button type="button" class="tag-btn" data-val="Nightlife">🍸 Nightlife</button>
+                        <button type="button" class="tag-btn" data-val="History">🏛️ History</button>
+                        <button type="button" class="tag-btn" data-val="Relaxing">💆 Relaxing</button>
+                        <button type="button" class="tag-btn" data-val="Beach">🏖️ Beach</button>
+                        <button type="button" class="tag-btn" data-val="Urban">🏙️ Urban</button>
+                        <button type="button" class="tag-btn" data-val="Nature">🌲 Nature</button>
+                    </div>
+                    <input type="hidden" id="activities-input">
+                </div>
+
+                <button type="submit" class="w-full bg-[#ff5a5f] text-white py-3 rounded-xl font-bold text-lg hover:bg-[#ff4146] transition">
+                    Save Profile
+                </button>
+            </form>
+        </div>
+
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Your Availability</h2>
+            <div id="calendar" class="flex-grow min-h-[500px]"></div>
+        </div>
     </div>
 
-    <script>
-        const { createApp } = Vue;
+    <div id="event-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Mark Available</h3>
+            <p id="modal-date-range" class="text-green-600 font-medium text-sm mb-4">...</p>
+            <input type="text" id="event-note" class="w-full p-3 border rounded-lg mb-6" placeholder="Note (e.g. Free after 2pm)">
+            <div class="flex gap-3">
+                <button id="close-modal-btn" class="flex-1 py-3 bg-gray-100 rounded-xl">Cancel</button>
+                <button id="save-avail-btn" class="flex-1 py-3 text-white bg-green-500 rounded-xl">Confirm</button>
+            </div>
+        </div>
+    </div>
 
-        createApp({
-            data() {
-                return {
-                    mobileMenuOpen: false,
-                    user: { name: '', email: '', picture: '' },
-                    universities: [],
-                    
-                    // Form Data
-                    form: {
-                        name: '',
-                        role: 'student',
-                        university_id: null,
-                        budget_min: null,
-                        budget_max: null,
-                        preferred_types: []
-                    },
-                    
-                    // Static Data
-                    tripTypes: ['Nature', 'Urban', 'Beach', 'History', 'Food', 'Adventure'],
-
-                    // Calendar
-                    calendar: null,
-                    showModal: false,
-                    selectedInfo: null,
-                    selectedDateDisplay: '',
-                    availabilityNote: ''
-                }
-            },
-            async mounted() {
-                await this.loadData();
-                this.initCalendar();
-            },
-            methods: {
-                async loadData() {
-                    // Fetch Unis
-                    try {
-                        let res = await fetch('/api/universities');
-                        this.universities = await res.json();
-                    } catch(e) {}
-
-                    // Fetch Profile
-                    try {
-                        let res = await fetch('/api/user/profile');
-                        if(res.status === 401) return window.location.href = '/login';
-                        const data = await res.json();
-                        this.user = data;
-                        
-                        // Populate Form
-                        this.form = {
-                            name: data.name,
-                            role: data.role || 'student',
-                            university_id: data.university_id,
-                            budget_min: data.budget_min,
-                            budget_max: data.budget_max,
-                            preferred_types: data.preferred_types || []
-                        };
-                    } catch(e) {}
-                },
-
-                togglePreference(key, val) {
-                    const idx = this.form[key].indexOf(val);
-                    if (idx === -1) this.form[key].push(val);
-                    else this.form[key].splice(idx, 1);
-                },
-
-                async updateProfile() {
-                    try {
-                        const res = await fetch('/api/user/profile', {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(this.form)
-                        });
-                        if(res.ok) {
-                            alert("Profile Saved!");
-                            this.calendar.refetchEvents(); // Refresh in case uni changed
-                        }
-                    } catch(e) { alert("Error saving"); }
-                },
-
-                // --- CALENDAR LOGIC ---
-                initCalendar() {
-                    const calendarEl = document.getElementById('calendar');
-                    this.calendar = new FullCalendar.Calendar(calendarEl, {
-                        initialView: 'dayGridMonth',
-                        headerToolbar: {
-                            left: 'prev', center: 'title', right: 'next'
-                        },
-                        selectable: true,
-                        selectLongPressDelay: 300, // Helps with touch devices (300ms hold to drag)
-                        editable: false,
-                        height: 'auto',
-                        events: '/api/user/calendar',
-
-                        // 1. Drag to Select (Touch & Mouse)
-                        select: (info) => {
-                            this.selectedInfo = info;
-                            
-                            // Format date for display
-                            const start = new Date(info.startStr).toLocaleDateString(undefined, {month:'short', day:'numeric'});
-                            // End date is exclusive in FC, so we subtract 1 day for visual
-                            let endDate = new Date(info.endStr);
-                            endDate.setDate(endDate.getDate() - 1);
-                            const end = endDate.toLocaleDateString(undefined, {month:'short', day:'numeric'});
-                            
-                            this.selectedDateDisplay = (start === end) ? start : `${start} - ${end}`;
-                            this.availabilityNote = '';
-                            this.showModal = true;
-                        },
-
-                        // 2. Click to Delete
-                        eventClick: async (info) => {
-                            // Assuming 'user_avail' is the green event type from backend
-                            if (info.event.extendedProps.type === 'user_avail' || info.event.backgroundColor === '#2ecc71') {
-                                if(confirm("Delete this available slot?")) {
-                                    await fetch(`/api/user/availability/${info.event.id}`, { method: 'DELETE' });
-                                    info.event.remove();
-                                }
-                            }
-                        }
-                    });
-                    this.calendar.render();
-                },
-
-                closeModal() {
-                    this.showModal = false;
-                    this.calendar.unselect();
-                },
-
-                async saveAvailability() {
-                    try {
-                        const res = await fetch('/api/user/availability', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                start_date: this.selectedInfo.startStr,
-                                end_date: this.selectedInfo.endStr, // Send as-is (exclusive)
-                                note: this.availabilityNote
-                            })
-                        });
-
-                        if(res.ok) {
-                            this.calendar.refetchEvents();
-                            this.closeModal();
-                        }
-                    } catch(e) {
-                        alert("Failed to save");
-                    }
-                }
-            }
-        }).mount('#app');
-    </script>
+    <script src="profile.js"></script>
 </body>
 </html>
