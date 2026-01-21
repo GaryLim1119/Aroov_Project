@@ -3,134 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - Aroov</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="profile.css">
-</head>
-<body>
-
-<nav class="navbar">
-    <div class="logo">Aroov Trip.</div>
-    <div class="menu-toggle" id="mobile-menu-btn">
-        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
-    </div>
-    <div class="nav-links" id="nav-links-container">
-        <a href="/user">Explore</a>
-        <a href="/user/favourites.html">Favourites</a>
-        <a href="/user/groups.html">Groups</a>
-        <a href="/user/profile.html" class="active profile-chip">
-            <img src="" id="navUserImg" alt="Profile">
-            <span id="navUserName">Loading...</span>
-        </a>
-        <a href="/logout" class="btn-logout">Logout</a>
-    </div>
-</nav>
-
-<div class="profile-container">
+    <title>User Profile - Aroov</title>
     
-    <div class="profile-card settings-section">
-        <div class="profile-header">
-            <img id="profileAvatar" src="https://via.placeholder.com/100" alt="Avatar">
-            <div>
-                <h2 id="profileNameDisplay">User Name</h2>
-                <p id="profileEmailDisplay">user@example.com</p>
-            </div>
-        </div>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-        <form id="profileForm">
-            <div class="form-group">
-                <label>Display Name</label>
-                <input type="text" id="inputName" required>
-            </div>
-            <div class="form-group">
-                <label>I am a...</label>
-                <div class="role-selector">
-                    <label class="radio-card">
-                        <input type="radio" name="role" value="general" onchange="toggleUniversity(false)">
-                        <span class="radio-label"> Traveler 🌍</span>
-                    </label>
-                    <label class="radio-card">
-                        <input type="radio" name="role" value="student" onchange="toggleUniversity(true)">
-                        <span class="radio-label">Student 🎓</span>
-                    </label>
-                </div>
-            </div>
-            <div class="form-group hidden" id="uniSection">
-                <label>Select University</label>
-                <select id="selectUni">
-                    <option value="">-- Loading Universities --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Trip Budget Preference (RM)</label>
-                <div class="budget-inputs">
-                    <input type="number" id="budgetMin" placeholder="Min" min="0">
-                    <span style="padding:0 10px;">-</span>
-                    <input type="number" id="budgetMax" placeholder="Max">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Preferred Trip Types</label>
-                <div class="tags-container" id="typeTags">
-                    <div class="tag-item" data-val="Nature">Nature 🌲</div>
-                    <div class="tag-item" data-val="Urban">Urban 🏙️</div>
-                    <div class="tag-item" data-val="Beach">Beach 🏖️</div>
-                    <div class="tag-item" data-val="Historical">Historical 🏛️</div>
-                    <div class="tag-item" data-val="Adventure">Adventure 🧗</div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Preferred Activities</label>
-                <div class="tags-container" id="activityTags">
-                    <div class="tag-item" data-val="Hiking">Hiking 🥾</div>
-                    <div class="tag-item" data-val="Food">Food Hunting 🍜</div>
-                    <div class="tag-item" data-val="Shopping">Shopping 🛍️</div>
-                    <div class="tag-item" data-val="Relaxing">Relaxing 💆</div>
-                    <div class="tag-item" data-val="Photography">Photography 📸</div>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-save" id="btnSave">Save Changes</button>
-        </form>
-    </div>
-
-    <div class="profile-card calendar-section">
-        <h3>📅 Your Schedule</h3>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #ff5a5f; border-radius: 4px; }
         
-        <div class="cal-legend">
-            <div><span class="dot dot-green"></span> Uni Holiday</div>
-            <div><span class="dot dot-red"></span> Uni Exam</div>
-            <div><span class="dot dot-grey"></span> My Busy Dates</div>
+        /* Modal Transition */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <div id="app">
+
+        <nav class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <span class="text-2xl font-bold text-[#ff5a5f]">Aroov Trip</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="#" class="text-gray-900 font-medium">Explore</a>
+                        <a href="#" class="text-gray-500 hover:text-gray-900">Favourites</a>
+                        <a href="groups.html" class="text-gray-500 hover:text-gray-900">Groups</a>
+                        <div class="flex items-center space-x-2" v-if="user">
+                            <img :src="user.picture" class="h-8 w-8 rounded-full border border-gray-200">
+                            <span class="text-sm font-medium text-gray-700">{{ user.name }}</span>
+                        </div>
+                        <a href="/logout" class="text-sm text-[#ff5a5f] hover:text-red-700">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <div class="space-y-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <img :src="user.picture" class="h-20 w-20 rounded-full object-cover border-4 border-white shadow-md">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">{{ user.name }}</h2>
+                                <p class="text-sm text-gray-500">{{ user.email }}</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Display Name</label>
+                                <input v-model="form.name" type="text" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#ff5a5f] focus:border-transparent outline-none transition">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">I am a...</label>
+                                <div class="flex bg-gray-100 p-1 rounded-lg">
+                                    <button @click="form.role = 'student'" :class="{'bg-white shadow-sm text-[#ff5a5f]': form.role === 'student', 'text-gray-500': form.role !== 'student'}" class="flex-1 py-1.5 text-sm font-medium rounded-md transition-all">Student 🎓</button>
+                                    <button @click="form.role = 'traveller'" :class="{'bg-white shadow-sm text-[#ff5a5f]': form.role === 'traveller', 'text-gray-500': form.role !== 'traveller'}" class="flex-1 py-1.5 text-sm font-medium rounded-md transition-all">Traveller ✈️</button>
+                                </div>
+                            </div>
+
+                            <div v-if="form.role === 'student'">
+                                <label class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Select University</label>
+                                <select v-model="form.university_id" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#ff5a5f] outline-none">
+                                    <option :value="null">Select University</option>
+                                    <option v-for="uni in universities" :key="uni.university_id" :value="uni.university_id">{{ uni.name }}</option>
+                                </select>
+                            </div>
+
+                            <button @click="updateProfile" class="w-full bg-[#ff5a5f] text-white font-medium py-2.5 rounded-lg shadow-sm hover:bg-[#ff4449] transition active:scale-95">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <i class="fa-regular fa-calendar-check text-[#ff5a5f]"></i> Your Schedule
+                                </h3>
+                                <div class="flex gap-4 mt-2 text-xs">
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#2ecc71]"></span> Semester Break</span>
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#e74c3c]"></span> Uni Event</span>
+                                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#555]"></span> My Busy Dates</span>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                                <p><strong>Drag</strong> across dates to mark them as Busy.</p>
+                                <p><strong>Click</strong> a grey event to remove it.</p>
+                            </div>
+                        </div>
+
+                        <div id='calendar' class="text-sm"></div>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
-        <p class="cal-instruction">
-            <strong>Drag</strong> across dates to mark them as Busy.<br>
-            <strong>Click</strong> a grey event to remove it.
-        </p>
-        
-        <div id="calendar"></div>
-    </div>
-</div>
+        <div v-if="showModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-xl p-6 w-96 transform transition-all scale-100">
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Mark Availability</h3>
+                <p class="text-sm text-gray-500 mb-4">You selected: <span class="font-medium text-gray-800">{{ selectedDateRange }}</span></p>
+                
+                <label class="block text-xs font-medium text-gray-400 uppercase mb-1">Note (Optional)</label>
+                <input v-model="busyNote" type="text" placeholder="e.g. Part-time job, Family event" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:border-[#ff5a5f]">
 
-<div id="availModal" class="modal hidden">
-    <div class="modal-content">
-        <h3>Mark Availability</h3>
-        <p id="modalDateRange">Selected Dates...</p>
-        
-        <div class="form-group">
-            <label>Note (Optional)</label>
-            <input type="text" id="availNote" placeholder="e.g. Part-time job, Family event">
+                <div class="flex gap-3">
+                    <button @click="closeModal" class="flex-1 px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm hover:bg-gray-50 transition">Cancel</button>
+                    <button @click="saveAvailability" class="flex-1 px-4 py-2 bg-[#ff5a5f] text-white rounded-lg text-sm font-medium hover:bg-[#ff4449] transition shadow-sm">Mark as Busy</button>
+                </div>
+            </div>
         </div>
 
-        <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-            <button class="btn-confirm" onclick="saveAvailability()">Mark as Busy</button>
-        </div>
-    </div>
-</div>
+    </div> <script>
+        const { createApp } = Vue;
 
-<script src="profile.js"></script>
+        createApp({
+            data() {
+                return {
+                    user: { name: '', picture: '', email: '' },
+                    form: {
+                        name: '',
+                        role: 'student',
+                        university_id: null,
+                    },
+                    universities: [],
+                    calendar: null,
+                    
+                    // Modal State
+                    showModal: false,
+                    selectionInfo: null,
+                    busyNote: '',
+                    selectedDateRange: ''
+                }
+            },
+            async mounted() {
+                await this.fetchUniversities();
+                await this.fetchProfile();
+                this.initCalendar();
+            },
+            methods: {
+                async fetchUniversities() {
+                    const res = await fetch('/api/universities');
+                    this.universities = await res.json();
+                },
+                async fetchProfile() {
+                    try {
+                        const res = await fetch('/api/user/profile');
+                        if (!res.ok) throw new Error('Failed');
+                        const data = await res.json();
+                        this.user = data;
+                        this.form = { ...data };
+                    } catch (e) {
+                        window.location.href = '/login';
+                    }
+                },
+                async updateProfile() {
+                    try {
+                        const res = await fetch('/api/user/profile', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.form)
+                        });
+                        if (res.ok) alert('Profile updated!');
+                    } catch (e) {
+                        alert('Error updating profile');
+                    }
+                },
+                
+                // --- CALENDAR LOGIC ---
+                initCalendar() {
+                    const calendarEl = document.getElementById('calendar');
+                    this.calendar = new FullCalendar.Calendar(calendarEl, {
+                        initialView: 'dayGridMonth',
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: ''
+                        },
+                        selectable: true,
+                        editable: false,
+                        events: '/api/user/calendar',
+                        
+                        // 1. Trigger Modal on Select
+                        select: (info) => {
+                            this.selectionInfo = info;
+                            this.selectedDateRange = `${info.startStr} to ${info.endStr}`;
+                            this.busyNote = '';
+                            this.showModal = true; // Opens the modal
+                        },
+                        
+                        // 2. Delete on Click
+                        eventClick: async (info) => {
+                            if (info.event.extendedProps.type === 'user_busy') {
+                                if(confirm('Remove this busy slot?')) {
+                                    await fetch(`/api/user/availability/${info.event.id}`, { method: 'DELETE' });
+                                    this.calendar.refetchEvents();
+                                }
+                            }
+                        }
+                    });
+                    this.calendar.render();
+                },
+
+                closeModal() {
+                    this.showModal = false;
+                    if(this.calendar) this.calendar.unselect();
+                },
+
+                async saveAvailability() {
+                    if (!this.selectionInfo) return;
+
+                    try {
+                        const res = await fetch('/api/user/availability', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                start_date: this.selectionInfo.startStr,
+                                end_date: this.selectionInfo.endStr, // FullCalendar end date is exclusive, but our backend handles ranges generally
+                                note: this.busyNote
+                            })
+                        });
+
+                        if (res.ok) {
+                            this.calendar.refetchEvents();
+                            this.closeModal();
+                        } else {
+                            alert("Failed to save.");
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert("Error saving availability.");
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
 </body>
 </html>
