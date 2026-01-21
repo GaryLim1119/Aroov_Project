@@ -36,16 +36,17 @@ a { text-decoration: none; }
 .header-text h1 { font-size: 32px; font-weight: 600; margin-bottom: 10px; }
 .header-text p { color: #666; font-size: 16px; }
 
-/* MAIN SEARCH PILL CONTAINER */
+/* MAIN SEARCH PILL CONTAINER (DESKTOP) */
 .search-bar {
     background: white; 
-    padding: 5px; /* Padding controlled by children */
+    padding: 5px; 
     border-radius: 50px;
     display: flex; 
     align-items: center;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
     border: 1px solid #eee;
-    height: 60px; /* Fixed height for consistency */
+    height: 66px; /* Slightly taller for elegance */
+    max-width: 100%;
 }
 
 /* 1. TEXT INPUT */
@@ -55,59 +56,66 @@ a { text-decoration: none; }
     font-size: 14px; 
     color: #333; 
     background: transparent;
-    padding-left: 25px; /* Space from left edge */
-    flex: 1; /* Takes up remaining space */
+    padding-left: 25px; 
+    flex: 1; 
     height: 100%;
+    min-width: 150px;
 }
+.search-bar input::placeholder { color: #999; }
 
 /* 2. DROPDOWN STYLING */
 .search-bar select { 
     border: none; 
     outline: none; 
     font-size: 14px; 
-    font-weight: 500;
-    color: #555; 
+    font-weight: 600; /* Bold text for better readability */
+    color: #444; 
     background-color: transparent;
     height: 100%;
     cursor: pointer;
     
-    /* Create separation line */
+    /* Vertical Separator Line */
     border-left: 1px solid #eee; 
-    padding: 0 15px;
+    padding: 0 20px;
     margin-left: 5px;
 
     /* Custom Arrow Logic */
     appearance: none;
     -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    /* Clean Chevron Icon */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 12px;
-    padding-right: 30px; /* Make room for the arrow */
+    background-position: right 15px center;
+    background-size: 10px;
+    padding-right: 35px; /* Room for arrow */
 }
 
-.search-bar select:hover {
-    color: var(--primary);
-    background-color: #fafafa;
-}
+.search-bar select:hover { background-color: #fafafa; }
 
-/* 3. SEARCH BUTTON */
+/* 3. SEARCH BUTTON WITH ICON */
 .search-btn { 
     background: var(--primary); 
-    color: white; 
     border: none; 
-    width: 48px; 
-    height: 48px; 
+    width: 54px; 
+    height: 54px; 
     border-radius: 50%; 
     cursor: pointer; 
+    transition: 0.2s; 
+    margin-right: 5px; 
+    flex-shrink: 0;
+    
+    /* Centering the icon */
     display: flex; 
     align-items: center; 
-    justify-content: center; 
-    transition: 0.2s; 
-    margin-right: 5px; /* Space from right edge */
-    flex-shrink: 0; /* Prevents button from squishing */
+    justify-content: center;
+
+    /* Add Search Icon via CSS so it always shows */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3ccircle cx='11' cy='11' r='8'%3e%3c/circle%3e%3cline x1='21' y1='21' x2='16.65' y2='16.65'%3e%3c/line%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: center;
 }
 .search-btn:hover { transform: scale(1.05); box-shadow: 0 4px 10px rgba(255, 90, 95, 0.4); }
+
 
 /* --- AESTHETIC CARD GRID --- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
@@ -150,18 +158,10 @@ a { text-decoration: none; }
 }
 .icon-btn:hover { background: #eee; color: var(--primary); }
 
-/* --- HEART BUTTON LOGIC (NEW) --- */
-.heart-btn {
-    transition: all 0.2s ease;
-}
-/* This handles the RED color when JS adds the class 'liked' */
-.heart-btn.liked {
-    color: rgb(255, 0, 0) !important;
-    background-color: #ff8aa5; /* Optional: Light red background */
-}
-.heart-btn:hover {
-    transform: scale(1.1);
-}
+/* --- HEART BUTTON LOGIC --- */
+.heart-btn { transition: all 0.2s ease; }
+.heart-btn.liked { color: rgb(255, 0, 0) !important; background-color: #ff8aa5; }
+.heart-btn:hover { transform: scale(1.1); }
 
 /* Details Button */
 .btn-details {
@@ -220,37 +220,25 @@ a { text-decoration: none; }
 .btn-modal-add:hover { background: #e04a4f; box-shadow: 0 10px 20px rgba(255, 90, 95, 0.3); }
 
 /* --- NEW SHARE MODAL STYLES --- */
-
-/* Distinct Overlay for Share Modal */
 .modal-overlay {
-    display: none; 
-    position: fixed; z-index: 2000; left: 0; top: 0; 
-    width: 100%; height: 100%; 
-    background-color: rgba(44, 62, 80, 0.6); 
-    backdrop-filter: blur(4px); 
-    justify-content: center; align-items: center;
+    display: none; position: fixed; z-index: 2000; left: 0; top: 0; 
+    width: 100%; height: 100%; background-color: rgba(44, 62, 80, 0.6); 
+    backdrop-filter: blur(4px); justify-content: center; align-items: center;
 }
 .modal-overlay.active { display: flex; }
 
 .share-box {
     background: white; padding: 25px; border-radius: 20px;
-    width: 90%; max-width: 420px; 
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    width: 90%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     animation: scaleIn 0.3s ease;
 }
-
-@keyframes scaleIn { 
-    from { transform: scale(0.95); opacity: 0; } 
-    to { transform: scale(1); opacity: 1; } 
-}
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 .share-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .share-header h3 { margin: 0; font-size: 18px; font-weight: 700; }
 .close-share { background: none; border: none; font-size: 24px; cursor: pointer; color: #555; }
 
 .share-label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
-
-/* Share Buttons (Link/Email) */
 .share-actions { display: flex; gap: 10px; margin-bottom: 20px; }
 .btn-share-action {
     flex: 1; padding: 12px; border: 1px solid #eee; background: #f8f9fa;
@@ -258,176 +246,97 @@ a { text-decoration: none; }
     display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 .btn-share-action:hover { background: #e3f2fd; color: #007aff; border-color: #bbdefb; }
-
 .share-divider { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
 
-/* Group List Styles */
-.share-group-list { 
-    max-height: 200px; overflow-y: auto; 
-    border: 1px solid #f0f0f0; border-radius: 12px; 
-}
-
+.share-group-list { max-height: 200px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 12px; }
 .share-group-item {
     display: flex; justify-content: space-between; align-items: center; padding: 12px 15px;
     border-bottom: 1px solid #f9f9f9; transition: 0.2s;
 }
 .share-group-item:last-child { border-bottom: none; }
 .share-group-item:hover { background: #fdfdfd; }
-
 .share-group-info h4 { margin: 0; font-size: 14px; font-weight: 600; color: #333; }
 .share-group-info span { font-size: 11px; color: #999; }
-
 .btn-add-group {
     background: var(--primary); color: white; border: none; padding: 6px 14px;
-    border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;
-    transition: 0.2s;
+    border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s;
 }
 .btn-add-group:hover { background: #e0484d; }
 .btn-add-group:disabled { background: #ddd; cursor: not-allowed; }
 
-/* --- PROFILE CHIP STYLING (Google Style) --- */
+/* --- PROFILE CHIP STYLING --- */
 .profile-chip {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #f1f3f4; /* Light grey pill background */
-    padding: 4px 16px 4px 4px; /* Tighter padding on left for image */
-    border-radius: 50px;
-    text-decoration: none;
-    color: #333 !important; /* Force text color */
-    font-weight: 600;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
-    margin-left: 20px;
+    display: flex; align-items: center; gap: 10px;
+    background: #f1f3f4; padding: 4px 16px 4px 4px; border-radius: 50px;
+    text-decoration: none; color: #333 !important; font-weight: 600; font-size: 14px;
+    transition: all 0.3s ease; border: 1px solid transparent; margin-left: 20px;
 }
+.profile-chip:hover { background: #e8eaed; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.profile-chip img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(0,0,0,0.05); }
 
-.profile-chip:hover {
-    background: #e8eaed;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
+/* --- MOBILE RESPONSIVE --- */
+.menu-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+.menu-toggle .bar { width: 25px; height: 3px; background-color: #333; border-radius: 5px; transition: 0.3s; }
 
-.profile-chip img {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid rgba(0,0,0,0.05);
-}
-
-/* --- MOBILE & TABLET NAVIGATION --- */
-
-/* Hamburger Menu Icon (Hidden on Desktop) */
-.menu-toggle {
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    cursor: pointer;
-}
-.menu-toggle .bar {
-    width: 25px;
-    height: 3px;
-    background-color: #333;
-    border-radius: 5px;
-    transition: 0.3s;
-}
-
-/* Tablet & Mobile Breakpoint (768px) */
 @media (max-width: 768px) {
-    .navbar {
-        padding: 15px 20px; /* Smaller padding */
-    }
-
-    .menu-toggle {
-        display: flex; /* Show hamburger */
-    }
-
-    /* Hide links by default on mobile */
+    .navbar { padding: 15px 20px; }
+    .menu-toggle { display: flex; }
+    
     .nav-links {
-        position: absolute;
-        top: 60px; /* Below navbar */
-        left: 0;
-        width: 100%;
-        background: white;
-        flex-direction: column;
-        align-items: center;
-        padding: 20px 0;
-        gap: 20px;
+        position: absolute; top: 60px; left: 0; width: 100%; background: white;
+        flex-direction: column; align-items: center; padding: 20px 0; gap: 20px;
         box-shadow: 0 10px 10px rgba(0,0,0,0.05);
-        clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); /* Hidden */
-        transition: all 0.4s ease-in-out;
+        clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); transition: all 0.4s ease-in-out;
     }
+    .nav-links.active { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+    .nav-links a { margin-left: 0; font-size: 16px; }
+    
+    .profile-chip { margin-left: 0; background: #fff; border: 1px solid #eee; width: 80%; justify-content: center; padding: 8px; }
+    
+    .header-text h1 { font-size: 26px; text-align: center; }
+    .header-text p { text-align: center; font-size: 14px; }
+    .header-section { flex-direction: column; align-items: stretch; gap: 20px; }
 
-    .nav-links.active {
-        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); /* Visible */
-    }
-
-    .nav-links a {
-        margin-left: 0; /* Reset margins */
-        font-size: 16px;
-    }
-
-    /* Adjust Profile Chip for Mobile Menu */
-    .profile-chip {
-        margin-left: 0;
-        background: #fff;
-        border: 1px solid #eee;
-        width: 80%;
-        justify-content: center;
-        padding: 8px;
-    }
-
-
-    /* 2. Adjust text size for small screens */
-    .header-text h1 {
-        font-size: 26px;
-        text-align: center; /* Looks cleaner on mobile */
-    }
-    .header-text p {
-        text-align: center;
-        font-size: 14px;
-    }
-
-    .header-section {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 20px;
-    }
-
-    /* Stack the search bar elements vertically on mobile */
+    /* =========================================
+       PROFESSIONAL MOBILE SEARCH UI
+       ========================================= */
     .search-bar {
         flex-direction: column;
-        height: auto; /* Allow it to grow */
-        padding: 10px;
-        border-radius: 20px; /* Less rounded corners for stack */
+        height: auto;
+        padding: 0;
+        background: transparent; /* Remove container background */
+        border: none; /* Remove container border */
+        box-shadow: none; /* Remove container shadow */
+        gap: 12px;
     }
 
-    .search-bar input {
+    /* 1. Mobile Inputs look like distinct "Cards" */
+    .search-bar input, .search-bar select {
         width: 100%;
-        padding: 15px;
-        border-bottom: 1px solid #eee; /* Horizontal divider */
-        margin-bottom: 5px;
+        background-color: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 15px; /* Nice soft corners */
+        padding: 16px 20px; /* Fat finger padding */
+        font-size: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03); /* Subtle lift */
+        margin: 0; /* Reset margins */
+        height: auto; /* Allow auto height */
     }
 
-    .search-bar select {
-        width: 100%;
-        border-left: none; /* Remove vertical divider */
-        border-bottom: 1px solid #eee; /* Add horizontal divider */
-        padding: 15px;
-        margin: 0;
-        background-position: right 20px center; /* Adjust arrow position */
-    }
-
-    .search-btn {
-        width: 100%; /* Full width button */
-        border-radius: 12px; /* Rectangle button */
-        margin-top: 10px;
-        margin-right: 0;
-    }
+    /* Remove the desktop divider lines */
+    .search-bar select { border-left: 1px solid #e0e0e0; } 
     
-    /* 7. Fix container padding so edges aren't too tight */
-    .container {
-        padding: 20px;
+    /* 2. Mobile Search Button */
+    .search-btn {
+        width: 100%;
+        border-radius: 15px; /* Match input corners */
+        height: 55px; /* Tall button */
+        margin-top: 5px;
+        margin-right: 0;
+        box-shadow: 0 5px 15px rgba(255, 90, 95, 0.3);
+        /* Ensure Icon is centered */
+        background-position: center;
     }
-}
 
+    .container { padding: 20px; }
+}
