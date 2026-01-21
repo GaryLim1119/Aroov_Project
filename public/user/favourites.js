@@ -1,71 +1,25 @@
-// 1. LOAD DATA ON STARTUP
+// /public/user/favourites.js
+
+let currentItemToShare = null; 
+
 document.addEventListener('DOMContentLoaded', () => {
-    fetchUserProfile(); // Loads the user name/image in Navbar
-    loadFavourites();   // Loads the grid of cards
+    fetchUserProfile(); 
+    loadFavourites();   
+    highlightCurrentTab(); 
 });
 
-
-// --- RUN THIS ON LOAD ---
-document.addEventListener('DOMContentLoaded', () => {
-    // ... your existing fetchUser / loadData calls ...
-    
-    highlightCurrentTab(); // <--- ADD THIS LINE
-});
-
-// --- FUNCTION TO HIGHLIGHT ACTIVE TAB ---
-function highlightCurrentTab() {
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.nav-links a');
-
-    // 1. Remove 'active' class from ALL links first
-    navLinks.forEach(link => link.classList.remove('active'));
-
-    // 2. Add 'active' class based on the URL
-    if (currentPath.includes('favourites.html')) {
-        // Find the Favourites link
-        const favLink = document.querySelector('a[href*="favourites"]');
-        if (favLink) favLink.classList.add('active');
-
-    } else if (currentPath.includes('groups.html')) {
-        // Find the Groups link
-        const groupLink = document.querySelector('a[href*="groups"]');
-        if (groupLink) groupLink.classList.add('active');
-
-    } else {
-        // Default to "Explore" (for /user or /user/index.html)
-        const exploreLink = document.querySelector('a[href="/user"]');
-        if (exploreLink) exploreLink.classList.add('active');
-    }
-}
-
-// --- NAVBAR: GET USER NAME & IMAGE ---
-async function fetchUserProfile() {
-    try {
-        const res = await fetch('/api/user/me'); 
-        if (res.ok) {
-            const user = await res.json();
-            
-            // Update Name
-            const nameEl = document.getElementById('navUserName');
-            if (nameEl) nameEl.textContent = user.name || "Traveler"; 
-
-            // Update Image
-            const imgEl = document.getElementById('navUserImg');
-            if (imgEl && user.picture) {
-                imgEl.src = user.picture;
-            }
-        }
-    } catch (err) {
-        console.error("Profile load failed:", err);
-    }
-}
-
-// --- FAVOURITES LOGIC ---
+// --- 1. LOAD FAVOURITES ---
 async function loadFavourites() {
     const grid = document.getElementById('favGrid');
     
     try {
         const res = await fetch('/api/user/favourites');
+        
+        if (res.status === 401) {
+            window.location.href = '/login';
+            return;
+        }
+
         if (!res.ok) throw new Error('Failed to fetch favourites');
 
         const data = await res.json();
@@ -74,13 +28,14 @@ async function loadFavourites() {
     } catch (err) {
         console.error("Error loading favourites:", err);
         if(grid) {
-            grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#999; padding:60px;">
+            grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#ff5a5f; padding:60px;">
                                 Could not load favourites. <br> Check your server connection.
                               </p>`;
         }
     }
 }
 
+// --- 2. RENDER GRID ---
 function renderGrid(data) {
     const grid = document.getElementById('favGrid');
     if(!grid) return;
@@ -99,8 +54,10 @@ function renderGrid(data) {
         const imgUrl = item.images || 'https://via.placeholder.com/400x300?text=Aroov+Trip';
         const destId = item.dest_id || item.id;
         
-        // SAFE STRINGIFY: Escapes single quotes so titles like "John's Place" don't break the HTML
-        const itemString = JSON.stringify(item).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+        // SAFE STRINGIFY: Prepare data for onclick events
+        const safeItem = JSON.stringify(item).replace(/"/g, '"');
+
+        const priceDisplay = item.price_min > 0 ? `RM${item.price_min} - ${item.price_max}` : 'Free';
 
         return `
         <div class="card" id="card-${destId}">
@@ -115,10 +72,10 @@ function renderGrid(data) {
             <div class="card-bottom">
                 <div class="card-price">
                     <span class="price-label">Estimated Price</span>
-                    <span class="price-value">RM${item.price_min} - ${item.price_max}</span>
+                    <span class="price-value">${priceDisplay}</span>
                 </div>
                 <div class="card-icons">
-                    <button class="icon-btn" onclick="shareItem('${item.name}')">🔗</button>
+                    <button class="icon-btn" onclick="openShareModal(${safeItem})">🔗</button>
                     
                     <button class="icon-btn heart-btn liked" 
                             title="Remove from Favourites"
@@ -128,13 +85,14 @@ function renderGrid(data) {
                 </div>
             </div>
 
-            <button class="btn-details" onclick='openModal(${itemString})'>
+            <button class="btn-details" onclick="openModal(${safeItem})">
                 View Details
             </button>
         </div>
     `}).join('');
 }
 
+// --- 3. REMOVE FAVOURITE ---
 async function removeFavourite(btn, itemId) {
     if(!confirm("Remove this trip from your favourites?")) return;
 
@@ -166,99 +124,223 @@ async function removeFavourite(btn, itemId) {
     }
 }
 
-// --- MODAL LOGIC ---
-const modal = document.getElementById('detailModal');
+// --- 4. SHARE MODAL LOGIC (New) ---
+
+function openShareModal(item) {
+    currentItemToShare = (typeof item === 'string') ? JSON.parse(item) : item; 
+    
+    const modal = document.getElementById('shareModal');
+    if(modal) {
+        modal.classList.add('active'); 
+        fetchUserGroupsForShare(); 
+    }
+}
+
+function closeShareModal() {
+    const modal = document.getElementById('shareModal');
+    if(modal) modal.classList.remove('active');
+}
+
+function actionCopyLink() {
+    if(!currentItemToShare) return;
+    // Uses dest_id (from favourites API) or id (fallback)
+    const id = currentItemToShare.dest_id || currentItemToShare.id;
+    const shareUrl = `${window.location.origin}/destination?id=${id}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        const btn = document.querySelector('.btn-share-action');
+        if(btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "✅ Copied!";
+            setTimeout(() => btn.innerHTML = originalText, 2000);
+        }
+    });
+}
+
+function actionEmailShare() {
+    if(!currentItemToShare) return;
+    const subject = `Trip Recommendation: ${currentItemToShare.name}`;
+    const body = `Hey,\n\nI found this amazing place on Aroov Trip!\n\nDestination: ${currentItemToShare.name}\nState: ${currentItemToShare.state}\nEst. Cost: RM${currentItemToShare.price_min}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+async function fetchUserGroupsForShare() {
+    const listContainer = document.getElementById('shareGroupList');
+    if(!listContainer) return;
+    
+    listContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#ccc;">Syncing...</div>';
+
+    try {
+        const res = await fetch('/api/user/groups'); 
+        if (res.status === 401) return;
+
+        const groups = await res.json();
+
+        if (groups.length === 0) {
+            listContainer.innerHTML = '<div style="padding:20px; text-align:center; font-size:13px;">No groups found.<br><a href="/user/groups.html" style="color:blue;">Create a group</a></div>';
+            return;
+        }
+
+        listContainer.innerHTML = groups.map(g => `
+            <div class="share-group-item" style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                <div class="share-group-info">
+                    <h4 style="margin:0;">${g.group_name}</h4>
+                    <span style="font-size:12px; color:#777;">${g.member_count} Members</span>
+                </div>
+                <button class="btn-add-group" style="padding:5px 10px; cursor:pointer;" onclick="addToGroup(${g.group_id}, this)">
+                    Add +
+                </button>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        console.error(err);
+        listContainer.innerHTML = '<div style="padding:20px; text-align:center; color:red;">Error loading groups.</div>';
+    }
+}
+
+async function addToGroup(groupId, btnElement) {
+    if(!currentItemToShare) return;
+    
+    const originalText = btnElement.innerText;
+    btnElement.innerText = "...";
+    btnElement.disabled = true;
+
+    // Determine ID (Favourites API usually returns dest_id, but handles fallbacks)
+    const destId = currentItemToShare.dest_id || currentItemToShare.id;
+
+    try {
+        const res = await fetch(`/api/groups/${groupId}/recommend`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ destination_id: destId })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert("⚠️ " + (data.error || "Failed to add"));
+            btnElement.innerText = originalText;
+            btnElement.disabled = false;
+        } else {
+            btnElement.innerText = "Added ✅";
+            btnElement.style.background = "#2ecc71"; 
+            btnElement.style.color = "white";
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Network Error");
+        btnElement.innerText = originalText;
+        btnElement.disabled = false;
+    }
+}
+
+// --- 5. DETAILS MODAL ---
+const detailModal = document.getElementById('detailModal');
 const modalContent = document.getElementById('modalContentInject');
 
 function openModal(item) {
-    if(!modal || !modalContent) return;
+    if(!detailModal || !modalContent) return;
 
-    const imgUrl = item.images || 'https://via.placeholder.com/800x450';
-    const destId = item.dest_id || item.id;
-    // Create a google maps link
-    const mapQuery = encodeURIComponent(`${item.name} ${item.state} Malaysia`);
-    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+    const dest = (typeof item === 'string') ? JSON.parse(item) : item;
+    const safeItem = JSON.stringify(dest).replace(/"/g, '"');
+    const imgUrl = dest.images || 'https://via.placeholder.com/800x450';
+    const mapUrl = `http://googleusercontent.com/maps.google.com/4{encodeURIComponent(dest.name + ' ' + dest.state + ' Malaysia')}`;
 
     modalContent.innerHTML = `
-        <div class="close-btn" onclick="closeModal()">×</div>
-        <img src="${imgUrl}" class="modal-hero-img">
+        <div class="close-btn" onclick="closeDetailModal()" style="position:absolute; right:20px; top:20px; cursor:pointer; font-size:24px; color:white; background:rgba(0,0,0,0.5); width:40px; height:40px; border-radius:50%; text-align:center; line-height:40px; z-index:10;">×</div>
+        <img src="${imgUrl}" class="modal-hero-img" style="width:100%; height:300px; object-fit:cover;">
         
-        <div class="modal-body">
-            <div class="modal-flex">
-                <div class="modal-main">
-                    <h1 class="modal-title">${item.name}</h1>
-                    <div class="modal-subtitle">
-                        <span>📍 ${item.state}</span>
-                        <span style="margin: 0 10px;">|</span>
-                        <span>🏷️ Type: <strong>${item.type}</strong></span>
-                    </div>
-                    
-                    <span class="modal-label">About</span>
-                    <p class="modal-desc">${item.description || "No description available."}</p>
-                    
-                    <span class="modal-label">Activities</span>
-                    <p style="color:#555; line-height: 1.6;">
-                        ${item.activities || "Sightseeing, Photography, Relaxation"}
-                    </p>
+        <div class="modal-body" style="padding:25px;">
+            <div class="modal-flex" style="display:flex; flex-wrap:wrap; gap:20px;">
+                <div class="modal-main" style="flex:2; min-width:300px;">
+                    <span style="background:#eee; padding:4px 8px; border-radius:4px; font-size:12px; text-transform:uppercase; font-weight:bold; color:#555;">${dest.type}</span>
+                    <span style="margin-left:5px; color:#777; font-size:14px;">📍 ${dest.state}</span>
+                    <h1 class="modal-title" style="margin-top:10px; font-size:28px;">${dest.name}</h1>
+                    <p class="modal-desc" style="margin-top:15px; line-height:1.6; color:#444;">${dest.description || "No description available."}</p>
                 </div>
-
-                <div class="modal-sidebar">
-                    <span class="modal-label">Est Cost</span>
-                    <span class="modal-price-tag">RM${item.price_min} - RM${item.price_max}</span>
-                    
-                    <a href="${mapUrl}" target="_blank" style="text-decoration:none;">
-                        <button class="btn-map">
-                            🗺️ View on Google Maps
+                <div class="modal-sidebar" style="flex:1; min-width:200px;">
+                    <div style="border:1px solid #eee; padding:15px; border-radius:8px; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+                        <div style="font-size:12px; color:#888; text-transform:uppercase;">Estimated Cost</div>
+                        <div style="font-weight:bold; font-size:22px; color:#2c3e50; margin:5px 0;">RM${dest.price_min} - ${dest.price_max}</div>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <a href="${mapUrl}" target="_blank" style="text-decoration:none;">
+                            <button class="btn-map" style="width:100%; padding:12px; background:#3498db; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:500;">🗺️ Google Maps</button>
+                        </a>
+                        <button class="btn-modal-add" style="width:100%; padding:12px; margin-top:10px; background:#34495e; color:white; border:none; border-radius:5px; cursor:pointer;" onclick="closeDetailModal(); openShareModal(${safeItem})">
+                            🔗 Share
                         </button>
-                    </a>
-
-                    <button class="btn-modal-add heart-btn liked" 
-                            style="margin-top:10px; background: white; color: red; border: 2px solid #eee;"
-                            onclick="removeFavourite(this, '${destId}'); closeModal();">
-                        💔 Remove Favourite
-                    </button>
+                    </div>
                 </div>
             </div>
         </div>
     `;
-    modal.style.display = 'flex';
+    detailModal.style.display = 'flex';
 }
 
-function closeModal() { 
-    if(modal) modal.style.display = 'none'; 
+function closeDetailModal() { 
+    if(detailModal) detailModal.style.display = 'none'; 
 }
 
-// Close modal when clicking outside
-window.onclick = function(e) { 
-    if (e.target == modal) closeModal(); 
+// --- 6. GLOBAL HELPERS ---
+
+// Highlight Active Tab
+function highlightCurrentTab() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-links a');
+    navLinks.forEach(link => link.classList.remove('active'));
+
+    if (currentPath.includes('favourites.html')) {
+        const favLink = document.querySelector('a[href*="favourites"]');
+        if (favLink) favLink.classList.add('active');
+    } else if (currentPath.includes('groups.html')) {
+        const groupLink = document.querySelector('a[href*="groups"]');
+        if (groupLink) groupLink.classList.add('active');
+    } else {
+        const exploreLink = document.querySelector('a[href="/user"]');
+        if (exploreLink) exploreLink.classList.add('active');
+    }
 }
 
-function shareItem(name) { 
-    // Copies the current URL to clipboard (or you could generate a specific link)
-    navigator.clipboard.writeText(window.location.href); 
-    alert(`Link for ${name} copied to clipboard!`); 
+// Global Click Handler (Closes Modals)
+window.onclick = function(event) {
+    const detailModal = document.getElementById('detailModal');
+    const shareModal = document.getElementById('shareModal');
+    
+    if (event.target == detailModal) closeDetailModal();
+    if (event.target == shareModal) closeShareModal();
 }
 
-// --- MOBILE MENU TOGGLE ---
+// --- 7. NAVBAR & USER ---
+async function fetchUserProfile() {
+    try {
+        const res = await fetch('/api/user/me'); 
+        if (res.ok) {
+            const user = await res.json();
+            const nameEl = document.getElementById('navUserName');
+            if (nameEl) nameEl.textContent = user.name || "Traveler"; 
+            const imgEl = document.getElementById('navUserImg');
+            if (imgEl && user.picture) imgEl.src = user.picture;
+        }
+    } catch (err) { console.error("Profile load failed:", err); }
+}
+
+// Mobile Menu
 const menuBtn = document.getElementById('mobile-menu-btn');
-const navLinks = document.getElementById('nav-links-container');
-
-if (menuBtn && navLinks) {
+const navLinksContainer = document.getElementById('nav-links-container');
+if (menuBtn) {
     menuBtn.addEventListener('click', () => {
-        navLinks.classList.toggle('active');
-        
-        // Animate hamburger bars
+        navLinksContainer.classList.toggle('active');
         const bars = document.querySelectorAll('.bar');
-        if(bars.length === 3) {
-            if (navLinks.classList.contains('active')) {
-                bars[0].style.transform = 'translateY(8px) rotate(45deg)';
-                bars[1].style.opacity = '0';
-                bars[2].style.transform = 'translateY(-8px) rotate(-45deg)';
-            } else {
-                bars[0].style.transform = 'none';
-                bars[1].style.opacity = '1';
-                bars[2].style.transform = 'none';
-            }
+        if (navLinksContainer.classList.contains('active')) {
+            bars[0].style.transform = 'translateY(8px) rotate(45deg)';
+            bars[1].style.opacity = '0';
+            bars[2].style.transform = 'translateY(-8px) rotate(-45deg)';
+        } else {
+            bars[0].style.transform = 'none';
+            bars[1].style.opacity = '1';
+            bars[2].style.transform = 'none';
         }
     });
 }

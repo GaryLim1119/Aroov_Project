@@ -32,25 +32,50 @@
     </div>
 </nav>
 
-    <div class="container">
-        
-        <div class="header-section">
-            <div class="header-text">
-                <h1>Your Saved Trips ❤️</h1>
-                <p>The destinations you have saved for later.</p>
-            </div>
-            </div>
+<div class="container">
+    <div class="header-section">
+        <div class="header-text">
+            <h1>Your Saved Trips ❤️</h1>
+            <p>The destinations you have saved for later.</p>
+        </div>
+    </div>
 
-        <div class="grid" id="favGrid">
-            <p style="color:#888;">Loading your saved items...</p>
+    <div class="grid" id="favGrid">
+        <p style="color:#888;">Loading your saved items...</p>
+    </div>
+</div>
+
+<div class="modal" id="detailModal">
+    <div class="modal-content" id="modalContentInject"></div>
+</div>
+
+<div id="shareModal" class="modal-overlay">
+    <div class="share-box">
+        <div class="share-header">
+            <h3>Share Destination 🌏</h3>
+            <button onclick="closeShareModal()" class="close-share">×</button>
         </div>
 
-    </div>
+        <p class="share-label">Share via Link</p>
+        <div class="share-actions">
+            <button class="btn-share-action" onclick="actionCopyLink()">
+                🔗 Copy Link
+            </button>
+            <button class="btn-share-action" onclick="actionEmailShare()">
+                ✉️ Send Email
+            </button>
+        </div>
 
-    <div class="modal" id="detailModal">
-        <div class="modal-content" id="modalContentInject"></div>
-    </div>
+        <hr class="share-divider">
 
-    <script src="favourites.js"></script>
+        <p class="share-label">Add to a Group Trip</p>
+        <p style="font-size:12px; color:#999; margin-bottom:10px;">Select a group to add this spot to their voting board.</p>
+        
+        <div id="shareGroupList" class="share-group-list">
+            </div>
+    </div>
+</div>
+
+<script src="favourites.js"></script>
 </body>
 </html>
