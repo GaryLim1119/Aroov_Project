@@ -641,5 +641,15 @@ app.post('/api/groups/vote', async (req, res) => {
     }
 });
 
+app.get('/api/user/me', (req, res) => {
+    if (!req.user) return res.status(401).json({ error: "Not logged in" });
+    
+    // Return the data needed for the chip
+    res.json({
+        username: req.user.username,
+        profile_picture: req.user.profile_picture // URL to image
+    });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
