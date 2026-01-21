@@ -296,9 +296,6 @@ app.put('/api/user/profile', checkAuthenticated, async (req, res) => {
     }
 });
 
-// 4. Get Calendar Data (University + Personal)
-// 5. [GET] Fetch User Calendar Events
-// 5. [GET] Fetch Combined Calendar (Personal + University)
 // 5. [GET] Fetch Combined Calendar (Personal + University)
 app.get('/api/user/calendar', checkAuthenticated, async (req, res) => {
     const userId = req.user.id || req.user.user_id;
@@ -307,34 +304,35 @@ app.get('/api/user/calendar', checkAuthenticated, async (req, res) => {
         // 1. Get the user's University ID
         const [userRows] = await db.query("SELECT university_id FROM users WHERE user_id = ?", [userId]);
         const uniId = userRows[0]?.university_id;
-        
-        console.log(`Fetching calendar for User ${userId}, University: ${uniId}`); // DEBUG LOG
 
         // 2. Fetch Personal Availability
         const [personalRows] = await db.query(
-            "SELECT * FROM user_availability WHERE user_id = ?", 
+            "SELECT avail_id, start_date, end_date, note FROM user_availability WHERE user_id = ?", 
             [userId]
         );
 
-        // 3. Fetch University Schedules (only if user has a uni)
+        // 3. Fetch University Schedules
         let uniRows = [];
         if (uniId) {
+            // WE SPECIFICALLY SELECT COLUMNS HERE to avoid 'undefined' errors
             const [rows] = await db.query(
-                "SELECT * FROM university_schedules WHERE university_id = ?", 
+                `SELECT event_type, event_name, start_date, end_date 
+                 FROM university_schedules 
+                 WHERE university_id = ?`, 
                 [uniId]
             );
             uniRows = rows;
         }
 
-        console.log(`Found: ${personalRows.length} Personal, ${uniRows.length} Uni events`); // DEBUG LOG
+        // --- DEBUGGING: Print the first uni event found ---
+        if (uniRows.length > 0) {
+            console.log("Debug Uni Event:", uniRows[0]); 
+        } else {
+            console.log("No university events found for Uni ID:", uniId);
+        }
+        // --------------------------------------------------
 
-        // 4. Helper to format dates as YYYY-MM-DD
-        const toDateStr = (dateObj) => {
-            // Ensure we treat the date as UTC or local string properly
-            const d = new Date(dateObj);
-            return d.toISOString().split('T')[0];
-        };
-
+        const toDateStr = (d) => new Date(d).toISOString().split('T')[0];
         const events = [];
 
         // -- Process Personal Events --
@@ -345,26 +343,34 @@ app.get('/api/user/calendar', checkAuthenticated, async (req, res) => {
                 start: toDateStr(row.start_date),
                 end: toDateStr(row.end_date),
                 display: 'background',
-                backgroundColor: '#22c55e', // Green
-                allDay: true,               // FORCE all-day rendering
+                backgroundColor: '#22c55e', 
+                allDay: true,
                 extendedProps: { type: 'user_busy' }
             });
         });
 
         // -- Process University Events --
         uniRows.forEach((row, index) => {
+            // Fallback: If event_type is missing, try to detect it or default to 'Event'
+            const type = row.event_type || "Event";
+            const name = row.event_name || "University Event";
+
             let color = '#3b82f6'; // Default Blue
-            if (row.event_type === 'exam') color = '#ef4444'; // Red
-            if (row.event_type === 'semester_break') color = '#22c55e'; // Green
+            
+            // Flexible matching (handles 'Exam', 'exam', 'Finals', etc.)
+            const typeLower = type.toLowerCase();
+            if (typeLower.includes('exam')) color = '#ef4444';       // Red
+            else if (typeLower.includes('break')) color = '#22c55e'; // Green
+            else if (typeLower.includes('holiday')) color = '#f59e0b'; // Orange
 
             events.push({
                 id: `uni-${index}`,
-                title: `${row.event_type}: ${row.event_name}`,
+                title: `${type}: ${name}`,
                 start: toDateStr(row.start_date),
                 end: toDateStr(row.end_date),
                 display: 'background',
                 backgroundColor: color,
-                allDay: true,              // FORCE all-day rendering
+                allDay: true,
                 editable: false,
                 extendedProps: { type: 'uni_schedule' }
             });
@@ -377,7 +383,6 @@ app.get('/api/user/calendar', checkAuthenticated, async (req, res) => {
         res.status(500).json([]);
     }
 });
-
 
 // 5. [LEGACY] Toggle Personal Availability (Single click) - Kept for fallback
 app.post('/api/user/calendar/toggle', checkAuthenticated, async (req, res) => {
