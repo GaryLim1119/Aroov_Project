@@ -298,36 +298,84 @@ app.put('/api/user/profile', checkAuthenticated, async (req, res) => {
 
 // 4. Get Calendar Data (University + Personal)
 // 5. [GET] Fetch User Calendar Events
+// 5. [GET] Fetch Combined Calendar (Personal + University)
 app.get('/api/user/calendar', checkAuthenticated, async (req, res) => {
     const userId = req.user.id || req.user.user_id;
 
     try {
-        // We use DATE_FORMAT to ensure Node doesn't shift the timezone
-        const [rows] = await db.query(
-            `SELECT 
-                avail_id, 
-                DATE_FORMAT(start_date, '%Y-%m-%d') as start, 
-                DATE_FORMAT(end_date, '%Y-%m-%d') as end, 
-                note 
-             FROM user_availability 
-             WHERE user_id = ?`,
+        // 1. Get the user's University ID
+        const [userRows] = await db.query("SELECT university_id FROM users WHERE user_id = ?", [userId]);
+        const uniId = userRows[0]?.university_id;
+
+        // 2. Fetch Personal Manual Availability
+        const [personalRows] = await db.query(
+            `SELECT avail_id, 
+             DATE_FORMAT(start_date, '%Y-%m-%d') as start, 
+             DATE_FORMAT(end_date, '%Y-%m-%d') as end, 
+             note 
+             FROM user_availability WHERE user_id = ?`,
             [userId]
         );
 
-        // Map DB results to FullCalendar Event Objects
-        const events = rows.map(row => ({
-            id: row.avail_id,
-            title: row.note || 'Available',
-            start: row.start,
-            end: row.end,
-            display: 'background',     // This makes the whole day cell colored
-            backgroundColor: '#22c55e', // Green color (Tailwind green-500)
-            extendedProps: { 
-                type: 'user_busy'      // Used by frontend to allow deletion
+        // 3. Fetch University Schedules (if user has a uni)
+        let uniRows = [];
+        if (uniId) {
+            [uniRows] = await db.query(
+                `SELECT event_type, event_name,
+                 DATE_FORMAT(start_date, '%Y-%m-%d') as start,
+                 DATE_FORMAT(end_date, '%Y-%m-%d') as end
+                 FROM university_schedules WHERE university_id = ?`,
+                [uniId]
+            );
+        }
+
+        // 4. Merge and Color Code
+        const events = [];
+
+        // -- Process Personal Events --
+        personalRows.forEach(row => {
+            events.push({
+                id: row.avail_id,
+                title: row.note || 'Available',
+                start: row.start,
+                end: row.end,
+                display: 'background',
+                backgroundColor: '#22c55e', // Green (Tailwind green-500)
+                extendedProps: { 
+                    type: 'user_busy' // Allows deletion in frontend
+                }
+            });
+        });
+
+        // -- Process University Events --
+        uniRows.forEach((row, index) => {
+            let color;
+            
+            // Color Logic
+            if (row.event_type === 'Exam') {
+                color = '#ef4444'; // Red (Tailwind red-500)
+            } else if (row.event_type === 'Semester Break') {
+                color = '#22c55e'; // Green (Tailwind green-500)
+            } else {
+                color = '#3b82f6'; // Blue for others
             }
-        }));
+
+            events.push({
+                id: `uni-${index}`, // Temporary ID
+                title: `${row.event_type}: ${row.event_name}`,
+                start: row.start,
+                end: row.end,
+                display: 'background',
+                backgroundColor: color,
+                editable: false, // Cannot drag university events
+                extendedProps: { 
+                    type: 'uni_schedule' // Prevents deletion in frontend
+                }
+            });
+        });
 
         res.json(events);
+
     } catch (err) {
         console.error("Error fetching calendar:", err);
         res.status(500).json([]);
