@@ -16,10 +16,21 @@ async function fetchAPI(url, options = {}) {
 }
 
 // --- RUN THIS ON LOAD ---
+// --- RUN THIS ON LOAD ---
 document.addEventListener('DOMContentLoaded', () => {
-    // ... your existing fetchUser / loadData calls ...
-    
-    highlightCurrentTab(); // <--- ADD THIS LINE
+    fetchUserProfile(); 
+    loadGroups();       
+    highlightCurrentTab(); 
+
+    // --- NEW: ADD THIS CODE TO MAKE MENU WORK ---
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navLinks = document.querySelector('.nav-links');
+
+    if (menuToggle && navLinks) {
+        menuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+    }
 });
 
 // --- FUNCTION TO HIGHLIGHT ACTIVE TAB ---
