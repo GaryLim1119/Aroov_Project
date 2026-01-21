@@ -334,7 +334,44 @@ if (menuBtn) {
     });
 }
 
+/* --- CUSTOM DROPDOWN LOGIC --- */
 
+// Toggle the specific dropdown
+function toggleDropdown(id) {
+    // Close all other dropdowns first
+    const allDropdowns = document.querySelectorAll('.custom-dropdown');
+    allDropdowns.forEach(dd => {
+        if (dd.id !== id) dd.classList.remove('active');
+    });
+
+    // Toggle the clicked one
+    const dropdown = document.getElementById(id);
+    dropdown.classList.toggle('active');
+}
+
+// Handle option selection
+function selectOption(dropdownId, value) {
+    // 1. Update the Trigger Text
+    const dropdown = document.getElementById(dropdownId);
+    const textSpan = dropdown.querySelector('.selected-text');
+    textSpan.innerText = value;
+    textSpan.style.color = "#222"; // Make text darker to show selection
+
+    // 2. Close the menu
+    dropdown.classList.remove('active');
+
+    // 3. (Optional) Log the value for filtering
+    console.log(`Selected ${value} in ${dropdownId}`);
+}
+
+// Close dropdowns if clicking outside
+window.onclick = function(event) {
+    if (!event.target.closest('.custom-dropdown')) {
+        document.querySelectorAll('.custom-dropdown').forEach(dd => {
+            dd.classList.remove('active');
+        });
+    }
+}
 
 // Pagination logic
 function renderPagination(total) {
