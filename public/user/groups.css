@@ -1,194 +1,104 @@
-/* RESET & FONTS */
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background-color: #f7f7f7;
-    color: #333;
-    overflow: hidden; /* Prevent body scroll, handle inside containers */
+/* =========================================
+   1. VARIABLES & RESET (From style.css)
+   ========================================= */
+:root {
+    --primary: #FF5A5F; /* Airbnb Red */
+    --bg: #f7f7f9;
+    --text: #222;
+    --card-radius: 24px;
 }
+
+* { 
+    box-sizing: border-box; 
+    font-family: 'Poppins', sans-serif; 
+    margin: 0; 
+    padding: 0; 
+}
+
+body { 
+    background-color: var(--bg); 
+    color: var(--text); 
+    overflow: hidden; /* Kept hidden for Desktop to allow Sidebar scrolling */
+}
+
+a { text-decoration: none; }
 
 /* =========================================
-   RESPONSIVE / MOBILE STYLES
+   2. NAVBAR (Exact match to style.css)
    ========================================= */
-
-/* 1. HAMBURGER MENU (Hidden on Desktop) */
-.menu-toggle {
-    display: none; /* Hidden by default */
-    flex-direction: column;
-    cursor: pointer;
-    gap: 5px;
-}
-
-.bar {
-    height: 3px;
-    width: 25px;
-    background-color: #333;
-    border-radius: 3px;
-    transition: 0.3s;
-}
-
-/* 2. TABLET & MOBILE BREAKPOINT (Max-width 768px) */
-@media (max-width: 768px) {
-    
-    /* --- NAVBAR CHANGES --- */
-    .navbar {
-        padding: 15px 20px;
-        flex-wrap: wrap; /* Allows menu to drop down */
-    }
-
-    .logo {
-        font-size: 20px;
-        min-width: auto; /* Remove the desktop balancing */
-        flex: 1; /* Logo takes available space */
-    }
-
-    .menu-toggle {
-        display: flex; /* Show hamburger */
-        margin-right: 15px;
-    }
-
-    /* Links become a Dropdown Menu */
-    .nav-links {
-        display: none; /* Hidden until toggled */
-        width: 100%;
-        flex-direction: column;
-        align-items: center;
-        background: white;
-        padding: 20px 0;
-        border-top: 1px solid #eee;
-        position: absolute;
-        top: 60px;
-        left: 0;
-        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-        z-index: 99;
-    }
-
-    .nav-links.active {
-        display: flex; /* Shown when JS toggles this class */
-    }
-
-    /* Hide User Name on Mobile to save space (keep avatar) */
-    #navUserName {
-        display: none;
-    }
-    .nav-right {
-        min-width: auto;
-        gap: 10px;
-    }
-
-    /* --- LAYOUT CHANGES --- */
-    body {
-        overflow: auto; /* Allow scrolling on mobile */
-    }
-
-    .group-container {
-        flex-direction: column; /* Stack Sidebar on top of Content */
-        height: auto; /* Allow full height */
-    }
-
-    /* Sidebar becomes a top list */
-    .group-sidebar {
-        width: 100%;
-        height: 250px; /* Fixed height for list */
-        border-right: none;
-        border-bottom: 5px solid #f0f0f0;
-    }
-
-    /* Content takes full width below */
-    .group-content {
-        width: 100%;
-        padding: 20px;
-        height: auto;
-        overflow: visible;
-    }
-
-    .group-header-row {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .group-actions button {
-        margin-left: 0;
-        margin-right: 10px;
-    }
-
-    /* --- TABS & GRIDS --- */
-    .nav-tabs {
-        overflow-x: auto; /* Allow tabs to scroll horizontally */
-        white-space: nowrap;
-        padding-bottom: 5px;
-    }
-
-    .cards-grid {
-        grid-template-columns: 1fr; /* 1 Card per row on phone */
-    }
-
-    /* --- MODALS --- */
-    .modal-box {
-        width: 90%; /* Responsive modal width */
-        margin: 20px;
-    }
-}
-
-/* NAVBAR */
 .navbar {
-    display: flex;
-    justify-content: space-between;
+    display: flex; 
+    justify-content: space-between; 
     align-items: center;
+    background: white; 
     padding: 15px 40px;
-    background: white;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    height: 60px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+    height: 70px; /* Fixed height for calculation consistency */
+    position: relative; 
     z-index: 100;
-    position: relative;
 }
 
-/* 1. Logo stays left */
 .logo { 
     font-size: 24px; 
     font-weight: 700; 
-    color: #ff5a5f; 
-    min-width: 180px; /* Reserves space so it balances the right side */
+    color: var(--primary); 
+    letter-spacing: -1px; 
 }
 
-/* 2. Links take up all middle space and center themselves */
-.nav-links {
-    flex: 1; /* This makes the container fill all empty space */
-    display: flex;
-    justify-content: center; /* Centers the links inside the container */
-    gap: 30px;
+/* Nav Links Layout */
+.nav-links { 
+    display: flex; 
+    align-items: center; 
+} 
+
+.nav-links a { 
+    color: #555; 
+    margin-left: 25px; 
+    font-weight: 500; 
+    font-size: 14px; 
+    transition: 0.3s; 
 }
 
-.nav-links a {
-    text-decoration: none;
-    color: #333;
-    font-weight: 500;
-    transition: 0.2s;
-}
-.nav-links a.active { color: #ff5a5f; }
-.nav-links a:hover { color: #ff5a5f; }
-
-/* 3. New Right Section (Profile + Logout) */
-.nav-right {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end; /* Aligns content to the right */
-    gap: 15px;
-    min-width: 180px; /* Matches the logo width for perfect balance */
+.nav-links a:hover, 
+.nav-links a.active { 
+    color: var(--primary); 
 }
 
-/* Profile Chip Styling */
+/* Logout Button */
+.btn-logout { 
+    padding: 8px 18px; 
+    border: 1px solid #ddd; 
+    border-radius: 20px; 
+    color: #555; 
+    font-size: 13px; 
+    transition: 0.3s; 
+    margin-left: 20px;
+}
+.btn-logout:hover { 
+    border-color: var(--primary); 
+    color: var(--primary); 
+}
+
+/* Profile Chip */
 .profile-chip {
     display: flex;
     align-items: center;
     gap: 10px;
     background: #f1f3f4;
-    padding: 4px 12px 4px 4px;
+    padding: 4px 16px 4px 4px;
     border-radius: 50px;
-    text-decoration: none !important; /* Overrides default link styles */
+    text-decoration: none !important;
     color: #333 !important;
+    font-weight: 600;
     font-size: 14px;
-    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    margin-left: 20px;
+}
+
+.profile-chip:hover {
+    background: #e8eaed;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .profile-chip img {
@@ -196,12 +106,32 @@ body {
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
+    border: 1px solid rgba(0,0,0,0.05);
 }
+
+/* Hamburger Menu Icon */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+}
+.menu-toggle .bar {
+    width: 25px;
+    height: 3px;
+    background-color: #333;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+/* =========================================
+   3. GROUP LAYOUT SPECIFICS (Keep this)
+   ========================================= */
 
 /* LAYOUT CONTAINER */
 .group-container {
     display: flex;
-    height: calc(100vh - 90px); /* Full height minus navbar */
+    height: calc(100vh - 70px); /* Adjusted to match new navbar height */
 }
 
 /* SIDEBAR */
@@ -227,7 +157,7 @@ body {
     width: 30px; height: 30px;
     border-radius: 50%;
     border: none;
-    background: #ff5a5f;
+    background: var(--primary);
     color: white;
     font-size: 20px;
     cursor: pointer;
@@ -252,7 +182,7 @@ body {
 }
 
 .group-item:hover { background: #f9f9f9; }
-.group-item.active { background: #fff5f5; border-color: #ff5a5f; }
+.group-item.active { background: #fff5f5; border-color: var(--primary); }
 .group-item h4 { margin: 0; font-size: 15px; }
 .group-item span { font-size: 12px; color: #888; }
 
@@ -312,8 +242,8 @@ body {
 }
 
 .tab-link.active {
-    color: #ff5a5f;
-    border-bottom: 3px solid #ff5a5f;
+    color: var(--primary);
+    border-bottom: 3px solid var(--primary);
 }
 
 .tab-pane { display: none; }
@@ -323,7 +253,7 @@ body {
 
 /* BUTTONS */
 .btn-primary {
-    background: #ff5a5f; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500;
+    background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500;
 }
 .btn-primary:hover { background: #e04a4f; }
 
@@ -394,9 +324,9 @@ body {
 }
 
 .btn-vote.voted {
-    background: #ff5a5f;
+    background: var(--primary);
     color: white;
-    border-color: #ff5a5f;
+    border-color: var(--primary);
 }
 
 .btn-add {
@@ -440,3 +370,114 @@ body {
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .btn-cancel { background: #f1f1f1; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; color: #333; }
 .btn-confirm-delete { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+
+
+/* =========================================
+   4. RESPONSIVE / MOBILE (Exact match to style.css)
+   ========================================= */
+@media (max-width: 768px) {
+    /* Navbar Changes from style.css */
+    .navbar {
+        padding: 15px 20px; 
+    }
+
+    .menu-toggle {
+        display: flex; /* Show hamburger */
+    }
+
+    /* Links Dropdown (Clip-path style) */
+    .nav-links {
+        position: absolute;
+        top: 70px; /* Below navbar */
+        left: 0;
+        width: 100%;
+        background: white;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 0;
+        gap: 20px;
+        box-shadow: 0 10px 10px rgba(0,0,0,0.05);
+        clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); /* Hidden */
+        transition: all 0.4s ease-in-out;
+        z-index: 999;
+    }
+
+    .nav-links.active {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); /* Visible */
+    }
+
+    .nav-links a {
+        margin-left: 0; 
+        font-size: 16px;
+    }
+
+    /* Adjust Profile Chip for Mobile Menu */
+    .profile-chip {
+        margin-left: 0;
+        background: #fff;
+        border: 1px solid #eee;
+        width: 80%;
+        justify-content: center;
+        padding: 8px;
+    }
+
+    /* Button Logout adjustment for mobile */
+    .btn-logout {
+        margin-left: 0;
+        width: 80%;
+        text-align: center;
+    }
+
+    /* --- GROUP LAYOUT RESPONSIVE (From original groups.css) --- */
+    body {
+        overflow: auto; /* Allow scrolling on mobile */
+    }
+
+    .group-container {
+        flex-direction: column; /* Stack Sidebar on top of Content */
+        height: auto; 
+    }
+
+    .group-sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 5px solid #f0f0f0;
+    }
+    
+    .group-list {
+        max-height: 300px; /* Limit height of sidebar list on mobile */
+    }
+
+    .group-content {
+        width: 100%;
+        padding: 20px;
+        height: auto;
+        overflow: visible;
+    }
+
+    .group-header-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .group-actions button {
+        margin-left: 0;
+        margin-right: 10px;
+    }
+
+    .nav-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 5px;
+    }
+
+    .cards-grid {
+        grid-template-columns: 1fr; 
+    }
+
+    .modal-box {
+        width: 90%;
+        margin: 20px;
+    }
+}
