@@ -7,6 +7,129 @@ body {
     overflow: hidden; /* Prevent body scroll, handle inside containers */
 }
 
+/* =========================================
+   RESPONSIVE / MOBILE STYLES
+   ========================================= */
+
+/* 1. HAMBURGER MENU (Hidden on Desktop) */
+.menu-toggle {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    cursor: pointer;
+    gap: 5px;
+}
+
+.bar {
+    height: 3px;
+    width: 25px;
+    background-color: #333;
+    border-radius: 3px;
+    transition: 0.3s;
+}
+
+/* 2. TABLET & MOBILE BREAKPOINT (Max-width 768px) */
+@media (max-width: 768px) {
+    
+    /* --- NAVBAR CHANGES --- */
+    .navbar {
+        padding: 15px 20px;
+        flex-wrap: wrap; /* Allows menu to drop down */
+    }
+
+    .logo {
+        font-size: 20px;
+        min-width: auto; /* Remove the desktop balancing */
+        flex: 1; /* Logo takes available space */
+    }
+
+    .menu-toggle {
+        display: flex; /* Show hamburger */
+        margin-right: 15px;
+    }
+
+    /* Links become a Dropdown Menu */
+    .nav-links {
+        display: none; /* Hidden until toggled */
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        background: white;
+        padding: 20px 0;
+        border-top: 1px solid #eee;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        z-index: 99;
+    }
+
+    .nav-links.active {
+        display: flex; /* Shown when JS toggles this class */
+    }
+
+    /* Hide User Name on Mobile to save space (keep avatar) */
+    #navUserName {
+        display: none;
+    }
+    .nav-right {
+        min-width: auto;
+        gap: 10px;
+    }
+
+    /* --- LAYOUT CHANGES --- */
+    body {
+        overflow: auto; /* Allow scrolling on mobile */
+    }
+
+    .group-container {
+        flex-direction: column; /* Stack Sidebar on top of Content */
+        height: auto; /* Allow full height */
+    }
+
+    /* Sidebar becomes a top list */
+    .group-sidebar {
+        width: 100%;
+        height: 250px; /* Fixed height for list */
+        border-right: none;
+        border-bottom: 5px solid #f0f0f0;
+    }
+
+    /* Content takes full width below */
+    .group-content {
+        width: 100%;
+        padding: 20px;
+        height: auto;
+        overflow: visible;
+    }
+
+    .group-header-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .group-actions button {
+        margin-left: 0;
+        margin-right: 10px;
+    }
+
+    /* --- TABS & GRIDS --- */
+    .nav-tabs {
+        overflow-x: auto; /* Allow tabs to scroll horizontally */
+        white-space: nowrap;
+        padding-bottom: 5px;
+    }
+
+    .cards-grid {
+        grid-template-columns: 1fr; /* 1 Card per row on phone */
+    }
+
+    /* --- MODALS --- */
+    .modal-box {
+        width: 90%; /* Responsive modal width */
+        margin: 20px;
+    }
+}
+
 /* NAVBAR */
 .navbar {
     display: flex;
@@ -20,17 +143,60 @@ body {
     position: relative;
 }
 
-.logo { font-size: 24px; font-weight: 700; color: #ff5a5f; }
+/* 1. Logo stays left */
+.logo { 
+    font-size: 24px; 
+    font-weight: 700; 
+    color: #ff5a5f; 
+    min-width: 180px; /* Reserves space so it balances the right side */
+}
+
+/* 2. Links take up all middle space and center themselves */
+.nav-links {
+    flex: 1; /* This makes the container fill all empty space */
+    display: flex;
+    justify-content: center; /* Centers the links inside the container */
+    gap: 30px;
+}
 
 .nav-links a {
     text-decoration: none;
     color: #333;
-    margin-left: 20px;
     font-weight: 500;
     transition: 0.2s;
 }
 .nav-links a.active { color: #ff5a5f; }
 .nav-links a:hover { color: #ff5a5f; }
+
+/* 3. New Right Section (Profile + Logout) */
+.nav-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Aligns content to the right */
+    gap: 15px;
+    min-width: 180px; /* Matches the logo width for perfect balance */
+}
+
+/* Profile Chip Styling */
+.profile-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f1f3f4;
+    padding: 4px 12px 4px 4px;
+    border-radius: 50px;
+    text-decoration: none !important; /* Overrides default link styles */
+    color: #333 !important;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.profile-chip img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
 
 /* LAYOUT CONTAINER */
 .group-container {

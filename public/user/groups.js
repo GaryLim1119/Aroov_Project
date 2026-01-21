@@ -15,6 +15,22 @@ async function fetchAPI(url, options = {}) {
     return data;
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    fetchUserProfile(); // Add this line
+    loadGroups();       // Your existing function
+});
+
+async function fetchUserProfile() {
+    try {
+        const res = await fetch('/api/user/me');
+        if (res.ok) {
+            const user = await res.json();
+            document.getElementById('navUserName').textContent = user.name || "Traveler";
+            if (user.picture) document.getElementById('navUserImg').src = user.picture;
+        }
+    } catch (e) { console.error("Profile error", e); }
+}
+
 // ==========================================
 // 1. LOAD SIDEBAR (My Groups)
 // ==========================================
