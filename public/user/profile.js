@@ -3,15 +3,20 @@ let selectedDates = null; // Store dates from drag selection
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Global variable to store fetched universities
+    // --- GLOBAL VARIABLES (To store data not in the form) ---
     let allUniversities = [];
+    let currentUserData = {
+        role: 'student',       // Default
+        budget_min: 0,
+        budget_max: 1000,
+        email: ''
+    };
 
     // ==========================================
     // 1. MOBILE MENU TOGGLE
     // ==========================================
     const menuBtn = document.getElementById('mobile-menu-btn');
     const navLinks = document.getElementById('nav-links-container');
-
     if (menuBtn) {
         menuBtn.addEventListener('click', () => {
             navLinks.classList.toggle('active');
@@ -20,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 2. FETCH UNIVERSITIES FROM DB (Dynamic)
+    // 2. FETCH UNIVERSITIES
     // ==========================================
     const uniTrigger = document.getElementById('uni-dropdown-trigger');
     const uniList = document.getElementById('uni-dropdown-list');
@@ -31,12 +36,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadUniversities() {
         try {
-            // CALL YOUR API ENDPOINT HERE
             const res = await fetch('/api/universities'); 
             if (!res.ok) throw new Error("Failed to load universities");
-            
-            allUniversities = await res.json(); // Store in global variable
-            renderUniversities(); // Render initial list
+            allUniversities = await res.json();
+            renderUniversities(); 
         } catch (err) {
             console.error(err);
             uniContainer.innerHTML = '<div class="p-3 text-red-500 text-sm">Error loading universities</div>';
@@ -45,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderUniversities(filterText = '') {
         uniContainer.innerHTML = '';
-        
         const filtered = allUniversities.filter(u => 
             u.name.toLowerCase().includes(filterText.toLowerCase())
         );
@@ -54,14 +56,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const div = document.createElement('div');
             div.className = 'uni-option';
             div.textContent = uni.name;
-            // Assuming your DB returns 'id' and 'name'
-            div.onclick = () => selectUniversity(uni.id || uni.university_id, uni.name);
+            div.onclick = () => selectUniversity(uni.university_id, uni.name);
             uniContainer.appendChild(div);
         });
 
-        if (filtered.length === 0) {
-            uniContainer.innerHTML = '<div class="p-3 text-sm text-gray-400 text-center">No results found</div>';
-        }
+        if (filtered.length === 0) uniContainer.innerHTML = '<div class="p-3 text-sm text-gray-400 text-center">No results found</div>';
     }
 
     function selectUniversity(id, name) {
@@ -72,19 +71,15 @@ document.addEventListener('DOMContentLoaded', function() {
         uniList.classList.add('hidden'); 
     }
 
-    // Dropdown Event Listeners
     if (uniTrigger) {
         uniTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
             uniList.classList.toggle('hidden');
             if (!uniList.classList.contains('hidden')) {
-                uniSearch.value = '';
-                renderUniversities(); // Show all
-                uniSearch.focus();
+                uniSearch.value = ''; renderUniversities(); uniSearch.focus();
             }
         });
     }
-
     document.addEventListener('click', () => { if(uniList) uniList.classList.add('hidden'); });
     if(uniSearch) {
         uniSearch.addEventListener('click', (e) => e.stopPropagation());
@@ -92,133 +87,156 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 3. TAGS LOGIC (Travel Types & Activities)
+    // 3. TAGS LOGIC
     // ==========================================
     function setupTagGroup(btnClass, inputId) {
         const btns = document.querySelectorAll(btnClass);
         const input = document.getElementById(inputId);
-
         btns.forEach(btn => {
             btn.addEventListener('click', () => {
                 btn.classList.toggle('selected');
-                // Gather all selected IDs/Names
-                const selected = Array.from(document.querySelectorAll(`${btnClass}.selected`))
-                                      .map(b => b.dataset.val);
-                input.value = selected.join(',');
+                const selected = Array.from(document.querySelectorAll(`${btnClass}.selected`)).map(b => b.dataset.val);
+                input.value = JSON.stringify(selected); // Store as JSON string for your backend
             });
         });
     }
 
-    setupTagGroup('.type-btn', 'types-input');       // Destination Types
-    setupTagGroup('.act-btn', 'activities-input');   // Activities
+    setupTagGroup('.type-btn', 'types-input');
+    setupTagGroup('.act-btn', 'activities-input');
 
     // ==========================================
     // 4. CALENDAR LOGIC
     // ==========================================
     const calendarEl = document.getElementById('calendar');
-    const modal = document.getElementById('event-modal');
-    const modalRange = document.getElementById('modal-date-range');
-    const noteInput = document.getElementById('event-note');
-    const saveAvailBtn = document.getElementById('save-avail-btn');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    let currentSelection = null; 
+    if (calendarEl) {
+        const modal = document.getElementById('event-modal');
+        const modalRange = document.getElementById('modal-date-range');
+        const noteInput = document.getElementById('event-note');
+        const saveAvailBtn = document.getElementById('save-avail-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        let currentSelection = null; 
 
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        selectable: true,
-        headerToolbar: { left: 'prev', center: 'title', right: 'next' },
-        events: '/api/user/calendar',
-        select: function(info) {
-            currentSelection = info;
-            let endDate = new Date(info.endStr);
-            endDate.setDate(endDate.getDate() - 1);
-            modalRange.innerText = `${info.startStr} to ${endDate.toISOString().split('T')[0]}`;
-            modal.classList.remove('hidden');
-        },
-        eventClick: async function(info) {
-            if (info.event.extendedProps.type === 'user_avail') {
-                if (confirm('Remove availability?')) {
-                    await fetch(`/api/user/availability/${info.event.id}`, { method: 'DELETE' });
-                    info.event.remove();
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            selectable: true,
+            headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+            events: '/api/user/calendar',
+            select: function(info) {
+                currentSelection = info;
+                let endDate = new Date(info.endStr);
+                endDate.setDate(endDate.getDate() - 1);
+                modalRange.innerText = `${info.startStr} to ${endDate.toISOString().split('T')[0]}`;
+                modal.classList.remove('hidden');
+            },
+            eventClick: async function(info) {
+                if (info.event.extendedProps.type === 'user_busy') { // Changed to match your backend type
+                    if (confirm('Delete this busy slot?')) {
+                        await fetch(`/api/user/availability/${info.event.id}`, { method: 'DELETE' });
+                        info.event.remove();
+                    }
                 }
             }
-        }
-    });
-    calendar.render();
-
-    if(closeModalBtn) closeModalBtn.addEventListener('click', () => { modal.classList.add('hidden'); calendar.unselect(); });
-
-    if(saveAvailBtn) {
-        saveAvailBtn.addEventListener('click', async () => {
-            if (!currentSelection) return;
-            try {
-                const res = await fetch('/api/user/availability', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        start_date: currentSelection.startStr,
-                        end_date: currentSelection.endStr,
-                        note: noteInput.value
-                    })
-                });
-                if(res.ok) { calendar.refetchEvents(); modal.classList.add('hidden'); noteInput.value=''; }
-            } catch(e) { console.error(e); }
         });
+        calendar.render();
+
+        if(closeModalBtn) closeModalBtn.addEventListener('click', () => { modal.classList.add('hidden'); calendar.unselect(); });
+
+        if(saveAvailBtn) {
+            saveAvailBtn.addEventListener('click', async () => {
+                if (!currentSelection) return;
+                try {
+                    const res = await fetch('/api/user/availability', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            start_date: currentSelection.startStr,
+                            end_date: currentSelection.endStr,
+                            note: noteInput.value
+                        })
+                    });
+                    if(res.ok) { calendar.refetchEvents(); modal.classList.add('hidden'); noteInput.value=''; }
+                } catch(e) { console.error(e); }
+            });
+        }
     }
 
     // ==========================================
-    // 5. SAVE PROFILE (With Better Error Log)
+    // 5. SHARED SAVE FUNCTION (Handles Profile & Password)
     // ==========================================
-    const profileForm = document.getElementById('profile-form');
+    async function saveProfileData(password = null) {
+        // Collect current form data
+        let typesVal = document.getElementById('types-input').value;
+        let actsVal = document.getElementById('activities-input').value;
 
+        // Ensure we send Arrays if the input is a JSON string, or keep as is
+        // Your backend expects: JSON.stringify(preferred_types) inside the backend code?
+        // Wait, your backend does: JSON.stringify(preferred_types) inside the SQL params.
+        // So we should send the raw ARRAY or String? 
+        // If your backend says `JSON.stringify(preferred_types)`, it expects an OBJECT/ARRAY from req.body.
+        
+        let typesPayload = [];
+        let actsPayload = [];
+        try { typesPayload = JSON.parse(typesVal || "[]"); } catch(e) { typesPayload = []; }
+        try { actsPayload = JSON.parse(actsVal || "[]"); } catch(e) { actsPayload = []; }
+
+        const payload = {
+            name: document.getElementById('display-name').value,
+            university_id: document.getElementById('university-id').value,
+            preferred_types: typesPayload,
+            preferred_activities: actsPayload,
+            
+            // Include HIDDEN fields required by your Backend
+            role: currentUserData.role,
+            budget_min: currentUserData.budget_min,
+            budget_max: currentUserData.budget_max
+        };
+
+        // If updating password, add it
+        if (password) {
+            payload.password = password;
+        }
+
+        try {
+            const res = await fetch('/api/user/profile', {
+                method: 'PUT', // <--- FIXED: Changed to PUT to match server.js
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert(password ? 'Password updated!' : 'Profile updated successfully!');
+                const navName = document.getElementById('navUserName');
+                if(navName) navName.textContent = payload.name;
+                return true;
+            } else {
+                const txt = await res.text();
+                alert("Error: " + txt);
+                return false;
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Network error");
+            return false;
+        }
+    }
+
+    // ==========================================
+    // 6. EVENT LISTENERS FOR FORMS
+    // ==========================================
+    
+    // A. Profile Form
+    const profileForm = document.getElementById('profile-form');
     if(profileForm) {
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const btn = profileForm.querySelector('button[type="submit"]');
             btn.innerText = "Saving...";
-            btn.disabled = true;
-
-            const payload = {
-                name: document.getElementById('display-name').value,
-                university_id: document.getElementById('university-id').value,
-                // These must match your Database Column Names exactly
-                preferred_types: document.getElementById('types-input').value, 
-                preferred_activities: document.getElementById('activities-input').value
-            };
-
-            console.log("Sending Payload:", payload); // Debugging line
-
-            try {
-                const res = await fetch('/api/user/profile', {
-                    method: 'POST', // Make sure your server accepts POST here
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    alert('Profile updated successfully!');
-                    const navName = document.getElementById('navUserName');
-                    if(navName) navName.textContent = payload.name;
-                } else {
-                    // READ THE ERROR FROM SERVER
-                    const errorText = await res.text();
-                    console.error("Server Error:", errorText);
-                    alert("Error saving: " + errorText);
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Network connection error.');
-            } finally {
-                btn.innerText = "Save Profile";
-                btn.disabled = false;
-            }
+            await saveProfileData();
+            btn.innerText = "Save Profile";
         });
     }
 
-    // ==========================================
-    // 6. CHANGE PASSWORD
-    // ==========================================
+    // B. Password Form
     const passForm = document.getElementById('password-form');
     if(passForm) {
         passForm.addEventListener('submit', async (e) => {
@@ -226,27 +244,79 @@ document.addEventListener('DOMContentLoaded', function() {
             const p1 = document.getElementById('new-password').value;
             const p2 = document.getElementById('confirm-password').value;
 
-            if(p1.length < 6) return alert("Password too short");
+            if(p1.length < 6) return alert("Password must be at least 6 characters");
             if(p1 !== p2) return alert("Passwords do not match");
 
-            try {
-                const res = await fetch('/api/user/password', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ password: p1 })
-                });
-                if(res.ok) { alert("Password changed!"); passForm.reset(); }
-                else alert("Failed to change password");
-            } catch(e) { console.error(e); }
+            const success = await saveProfileData(p1);
+            if(success) passForm.reset();
         });
     }
 
     // ==========================================
     // 7. INITIAL DATA LOAD
     // ==========================================
+    async function loadData() {
+        await loadUniversities(); // Load options first
+
+        try {
+            const res = await fetch('/api/user/profile');
+            if(res.ok) {
+                const data = await res.json();
+                
+                // 1. Store Global Data (Required for saving later)
+                currentUserData.role = data.role || 'student';
+                currentUserData.budget_min = data.budget_min || 0;
+                currentUserData.budget_max = data.budget_max || 1000;
+
+                // 2. Populate UI
+                document.getElementById('display-name').value = data.name;
+                document.getElementById('navUserName').textContent = data.name;
+                if(data.picture) {
+                    document.getElementById('navUserImg').src = data.picture;
+                    document.getElementById('profile-pic-preview').src = data.picture;
+                }
+
+                // 3. Select University
+                if(data.university_id) {
+                    const uni = allUniversities.find(u => u.university_id == data.university_id);
+                    if(uni) selectUniversity(uni.university_id, uni.name);
+                }
+
+                // 4. Populate Tags
+                // Handle case where data comes as string or JSON object
+                let types = [];
+                let activities = [];
+
+                if (typeof data.preferred_types === 'string') {
+                    // Try parsing if it's a JSON string
+                    try { types = JSON.parse(data.preferred_types); } catch(e) { types = data.preferred_types.split(','); }
+                } else if (Array.isArray(data.preferred_types)) {
+                    types = data.preferred_types;
+                }
+
+                if (typeof data.preferred_activities === 'string') {
+                    try { activities = JSON.parse(data.preferred_activities); } catch(e) { activities = data.preferred_activities.split(','); }
+                } else if (Array.isArray(data.preferred_activities)) {
+                    activities = data.preferred_activities;
+                }
+
+                // Activate buttons
+                document.querySelectorAll('.type-btn').forEach(btn => {
+                    if(types.includes(btn.dataset.val)) btn.classList.add('selected');
+                });
+                document.getElementById('types-input').value = JSON.stringify(types);
+
+                document.querySelectorAll('.act-btn').forEach(btn => {
+                    if(activities.includes(btn.dataset.val)) btn.classList.add('selected');
+                });
+                document.getElementById('activities-input').value = JSON.stringify(activities);
+            }
+        } catch(e) { console.log("Error loading user profile", e); }
+    }
+
+    // Upload Preview
     const fileInput = document.getElementById('profile-upload');
     const previewImg = document.getElementById('profile-pic-preview');
-
     if(fileInput) {
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -254,57 +324,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const reader = new FileReader();
                 reader.onload = (e) => previewImg.src = e.target.result;
                 reader.readAsDataURL(file);
+                // Note: Actual image upload requires a separate FormData handling or Base64 logic
+                // For now, this just previews it.
             }
         });
-    }
-
-    async function loadData() {
-        // 1. Load Universities FIRST
-        await loadUniversities(); 
-
-        // 2. Load User Data
-        try {
-            const res = await fetch('/api/user/me');
-            if(res.ok) {
-                const data = await res.json();
-                
-                // Name & Pic
-                if(data.name) {
-                    document.getElementById('display-name').value = data.name;
-                    document.getElementById('navUserName').textContent = data.name;
-                }
-                if(data.picture) {
-                    document.getElementById('navUserImg').src = data.picture;
-                    previewImg.src = data.picture;
-                }
-
-                // University (Must match ID from the fetched list)
-                if(data.university_id) {
-                    const uni = allUniversities.find(u => u.id == data.university_id || u.university_id == data.university_id);
-                    if(uni) {
-                        selectUniversity(uni.id || uni.university_id, uni.name);
-                    }
-                }
-
-                // Restore Types
-                if(data.preferred_types) {
-                    const types = data.preferred_types.split(',');
-                    document.querySelectorAll('.type-btn').forEach(btn => {
-                        if(types.includes(btn.dataset.val)) btn.classList.add('selected');
-                    });
-                    document.getElementById('types-input').value = data.preferred_types;
-                }
-
-                // Restore Activities
-                if(data.preferred_activities) {
-                    const acts = data.preferred_activities.split(',');
-                    document.querySelectorAll('.act-btn').forEach(btn => {
-                        if(acts.includes(btn.dataset.val)) btn.classList.add('selected');
-                    });
-                    document.getElementById('activities-input').value = data.preferred_activities;
-                }
-            }
-        } catch(e) { console.log("Error loading user profile", e); }
     }
 
     loadData();
