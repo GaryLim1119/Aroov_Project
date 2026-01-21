@@ -27,18 +27,87 @@ a { text-decoration: none; }
 
 /* --- LAYOUT & SEARCH --- */
 .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-.header-section { display: flex; justify-content: space-between; align-items: end; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; }
+
+.header-section { 
+    display: flex; justify-content: space-between; align-items: end; 
+    margin-bottom: 40px; flex-wrap: wrap; gap: 20px; 
+}
+
 .header-text h1 { font-size: 32px; font-weight: 600; margin-bottom: 10px; }
 .header-text p { color: #666; font-size: 16px; }
 
+/* MAIN SEARCH PILL CONTAINER */
 .search-bar {
-    background: white; padding: 8px 8px 8px 20px; border-radius: 50px;
-    display: flex; gap: 10px; align-items: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #eee;
+    background: white; 
+    padding: 5px; /* Padding controlled by children */
+    border-radius: 50px;
+    display: flex; 
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+    border: 1px solid #eee;
+    height: 60px; /* Fixed height for consistency */
 }
-.search-bar input, .search-bar select { border: none; outline: none; font-size: 14px; color: #333; background: transparent; }
-.search-btn { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-.search-btn:hover { transform: scale(1.05); }
+
+/* 1. TEXT INPUT */
+.search-bar input { 
+    border: none; 
+    outline: none; 
+    font-size: 14px; 
+    color: #333; 
+    background: transparent;
+    padding-left: 25px; /* Space from left edge */
+    flex: 1; /* Takes up remaining space */
+    height: 100%;
+}
+
+/* 2. DROPDOWN STYLING */
+.search-bar select { 
+    border: none; 
+    outline: none; 
+    font-size: 14px; 
+    font-weight: 500;
+    color: #555; 
+    background-color: transparent;
+    height: 100%;
+    cursor: pointer;
+    
+    /* Create separation line */
+    border-left: 1px solid #eee; 
+    padding: 0 15px;
+    margin-left: 5px;
+
+    /* Custom Arrow Logic */
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 30px; /* Make room for the arrow */
+}
+
+.search-bar select:hover {
+    color: var(--primary);
+    background-color: #fafafa;
+}
+
+/* 3. SEARCH BUTTON */
+.search-btn { 
+    background: var(--primary); 
+    color: white; 
+    border: none; 
+    width: 48px; 
+    height: 48px; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: 0.2s; 
+    margin-right: 5px; /* Space from right edge */
+    flex-shrink: 0; /* Prevents button from squishing */
+}
+.search-btn:hover { transform: scale(1.05); box-shadow: 0 4px 10px rgba(255, 90, 95, 0.4); }
 
 /* --- AESTHETIC CARD GRID --- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
@@ -308,12 +377,6 @@ a { text-decoration: none; }
         padding: 8px;
     }
 
-    .header-section {
-        flex-direction: column;
-        align-items: stretch; /* Stretches items to full width */
-        gap: 15px; /* Adds space between text and search bar */
-        margin-bottom: 30px;
-    }
 
     /* 2. Adjust text size for small screens */
     .header-text h1 {
@@ -325,32 +388,41 @@ a { text-decoration: none; }
         font-size: 14px;
     }
 
-    /* 3. Make Search Bar Full Width & Touch Friendly */
+    .header-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 20px;
+    }
+
+    /* Stack the search bar elements vertically on mobile */
     .search-bar {
-        width: 100%;
-        padding: 6px 6px 6px 15px; /* Tighter padding for mobile */
-        gap: 8px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08); /* Slightly stronger shadow for depth */
+        flex-direction: column;
+        height: auto; /* Allow it to grow */
+        padding: 10px;
+        border-radius: 20px; /* Less rounded corners for stack */
     }
 
-    /* 4. Make the text input fill the available space */
     .search-bar input {
-        flex: 1; /* Grows to fill space */
-        width: 100%; 
-        min-width: 0; /* Prevents overflow issues */
-        font-size: 15px; /* Readable text size */
+        width: 100%;
+        padding: 15px;
+        border-bottom: 1px solid #eee; /* Horizontal divider */
+        margin-bottom: 5px;
     }
 
-    /* 5. Limit the dropdown width so it doesn't crush the input */
     .search-bar select {
-        max-width: 100px; /* Optional: Constrain "Type" dropdown */
-        font-size: 13px;
+        width: 100%;
+        border-left: none; /* Remove vertical divider */
+        border-bottom: 1px solid #eee; /* Add horizontal divider */
+        padding: 15px;
+        margin: 0;
+        background-position: right 20px center; /* Adjust arrow position */
     }
 
-    /* 6. Adjust Search Button size */
     .search-btn {
-        width: 38px;
-        height: 38px;
+        width: 100%; /* Full width button */
+        border-radius: 12px; /* Rectangle button */
+        margin-top: 10px;
+        margin-right: 0;
     }
     
     /* 7. Fix container padding so edges aren't too tight */

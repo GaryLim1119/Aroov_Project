@@ -40,22 +40,26 @@
             </div>
             
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search places..." oninput="applyFilters()">
+                <input type="text" id="searchInput" placeholder="Where to?" oninput="applyFilters()">
+
                 <select id="typeFilter" onchange="applyFilters()">
-                    <option value="">Type</option>
+                    <option value="">All Types</option>
                     <option value="Island">Island</option>
                     <option value="City">City</option>
                     <option value="Nature">Nature</option>
                     <option value="Historical">Historical</option>
                 </select>
+
                 <select id="priceFilter" onchange="applyFilters()">
-                    <option value="">Budget</option>
-                    <option value="100"> < RM100</option>
-                    <option value="300"> < RM300</option>
-                    <option value="500"> < RM500</option>
+                    <option value="">Any Budget</option>
+                    <option value="100">Under RM100</option>
+                    <option value="300">Under RM300</option>
+                    <option value="500">Under RM500</option>
                 </select>
-                <button class="search-btn" onclick="loadDestinations()">🔍</button>
-            </div>
+
+                <button class="search-btn" onclick="loadDestinations()">
+                    <i class="fas fa-search"></i> </button>
+                </div>
         </div>
 
         <div id="destGrid" class="grid">
