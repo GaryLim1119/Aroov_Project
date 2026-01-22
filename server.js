@@ -141,7 +141,7 @@ passport.use(new GoogleStrategy({
               email: profile.emails[0].value,
               name: profile.displayName,
               picture: profile.photos[0].value,
-              role: 'student' // Default role
+              role: 'general' // Default role
           };
           const [result] = await db.query('INSERT INTO users (email, name, picture, role) VALUES (?, ?, ?, ?)', 
               [newUser.email, newUser.name, newUser.picture, newUser.role]);
