@@ -10,6 +10,8 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
+// Add this as the very first line of server.js
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 
 // --- CLOUDINARY IMPORTS ---
@@ -984,8 +986,11 @@ app.get('/api/groups/:groupId/calendar', checkAuthenticated, async (req, res) =>
 
 // --- server.js (SCROLL DOWN TO THIS ROUTE) ---
 
+// [GET] AI Recommendations (DEBUG VERSION)
 app.get('/api/groups/:groupId/ai-recommend', checkAuthenticated, async (req, res) => {
     const { groupId } = req.params;
+
+    console.log(`🤖 AI Request started for Group ${groupId}`);
 
     try {
         // 1. Fetch Users & Destinations
@@ -998,39 +1003,51 @@ app.get('/api/groups/:groupId/ai-recommend', checkAuthenticated, async (req, res
 
         const [destinations] = await db.query("SELECT * FROM destination");
 
-        if (users.length === 0 || destinations.length === 0) {
+        if (!users.length || !destinations.length) {
+            console.log("⚠️ No users or destinations found.");
             return res.json([]);
         }
 
-        // ============================================
-        // ✅ PASTE THE CODE HERE (INSIDE THE ROUTE)
-        // ============================================
-        
-        // Define URL dynamically
-        const protocol = req.protocol;
+        // 2. Construct Python API URL
+        // Force HTTPS on Vercel
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
         const host = req.get('host');
+        const pythonApiUrl = `${protocol}://${host}/api/recommend`;
         
-        // Use full URL for internal API call
-        const pythonApiUrl = `${protocol}://${host}/api/recommend`; 
-        console.log("Calling Python AI at:", pythonApiUrl);
+        console.log(`🔗 Calling Python at: ${pythonApiUrl}`);
 
-        // Call the Python API
+        // 3. Call Python API
+        // NOTE: If you are on an old Node version, this might fail without 'node-fetch'
         const response = await fetch(pythonApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ users, destinations })
         });
 
+        // 4. Check for Python Errors
         if (!response.ok) {
-            throw new Error(`Python API Failed: ${response.statusText}`);
+            const errorText = await response.text();
+            console.error(`❌ Python API Error (${response.status}):`, errorText);
+            // Return the actual error to the frontend for debugging
+            return res.status(500).json({ 
+                error: "Python AI Failed", 
+                details: errorText, 
+                url: pythonApiUrl 
+            });
         }
 
         const recommendations = await response.json();
+        console.log("✅ AI Success! Returning results.");
         res.json(recommendations);
 
     } catch (err) {
-        console.error("AI Error:", err);
-        res.status(500).json({ error: "Failed to fetch recommendations" });
+        console.error("💥 Server Crash Error:", err);
+        // Return the exact error message to the browser
+        res.status(500).json({ 
+            error: "Server Calculation Error", 
+            message: err.message, 
+            stack: err.stack 
+        });
     }
 });
 

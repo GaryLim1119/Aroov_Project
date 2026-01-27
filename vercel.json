@@ -1,13 +1,12 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "server.js",
-      "use": "@vercel/node"
-    }
+    { "src": "server.js", "use": "@vercel/node" },
+    { "src": "api/recommend.py", "use": "@vercel/python" }
   ],
   "routes": [
     { "handle": "filesystem" },
+    { "src": "/api/recommend", "dest": "/api/recommend.py" },
     { "src": "/(.*)", "dest": "/server.js" }
   ]
 }
