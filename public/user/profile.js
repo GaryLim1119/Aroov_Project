@@ -309,8 +309,16 @@ document.addEventListener('DOMContentLoaded', function() {
         try { typesPayload = JSON.parse(typesVal || "[]"); } catch(e) { typesPayload = []; }
         try { actsPayload = JSON.parse(actsVal || "[]"); } catch(e) { actsPayload = []; }
 
+        // ... inside saveProfileData() ...
+
         const selectedRoleEl = document.querySelector('input[name="role"]:checked');
         const roleValue = selectedRoleEl ? selectedRoleEl.value : 'student';
+
+        // --- NEW: Grab Budget Values ---
+        const budgetMinInput = document.getElementById('budget-min');
+        const budgetMaxInput = document.getElementById('budget-max');
+        const bMin = budgetMinInput && budgetMinInput.value ? parseInt(budgetMinInput.value) : 0;
+        const bMax = budgetMaxInput && budgetMaxInput.value ? parseInt(budgetMaxInput.value) : 1000;
 
         const payload = {
             name: document.getElementById('display-name').value,
@@ -318,8 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
             preferred_types: typesPayload,
             preferred_activities: actsPayload,
             role: roleValue, 
-            budget_min: currentUserData.budget_min,
-            budget_max: currentUserData.budget_max
+            budget_min: bMin, // Updated
+            budget_max: bMax  // Updated
         };
 
         if (password) payload.password = password;
@@ -389,8 +397,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await res.json();
                 
                 currentUserData.role = data.role || 'student';
-                currentUserData.budget_min = data.budget_min || 0;
-                currentUserData.budget_max = data.budget_max || 1000;
+                // --- NEW: Set Budget Inputs from DB ---
+                currentUserData.budget_min = data.budget_min !== undefined ? data.budget_min : 0;
+                currentUserData.budget_max = data.budget_max !== undefined ? data.budget_max : 1000;
+
+                const bMinEl = document.getElementById('budget-min');
+                const bMaxEl = document.getElementById('budget-max');
+                if(bMinEl) bMinEl.value = currentUserData.budget_min;
+                if(bMaxEl) bMaxEl.value = currentUserData.budget_max;
+                // --------------------------------------
 
                 const roleRadio = document.querySelector(`input[name="role"][value="${currentUserData.role}"]`);
                 if(roleRadio) {
