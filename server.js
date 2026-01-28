@@ -222,6 +222,30 @@ app.get('/logout', (req, res, next) => {
     req.logout((err) => { if (err) return next(err); res.redirect('/'); });
 });
 
+
+// --- ADD THIS TO SERVER.JS FOR FLUTTER ---
+
+app.post('/api/mobile-login', (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+        if (err) return next(err);
+        if (!user) return res.status(401).json({ error: "Invalid credentials" });
+
+        req.logIn(user, (err) => {
+            if (err) return next(err);
+            // SUCCESS: Return JSON instead of redirecting
+            return res.json({ 
+                status: "success", 
+                user: {
+                    id: user.user_id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    picture: user.picture
+                }
+            });
+        });
+    })(req, res, next);
+});
 // =========================================================
 // --- 🆕 PROFILE, UNIVERSITIES & CALENDAR APIs ---
 // =========================================================
