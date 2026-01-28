@@ -189,7 +189,19 @@ footer { padding: 60px; text-align: center; color: #666; font-size: 14px; }
   .nav-links.active li { opacity: 1; transform: translateY(0); }
 
   /* Bigger Login Button for Touch */
-  .mobile-login { width: 80%; text-align: center; display: block; }
+/* Inside your @media (max-width: 768px) block */
+
+.mobile-login { 
+  width: 80%; 
+  /* Use Flexbox to center text perfectly inside the button */
+  display: flex !important; 
+  justify-content: center; 
+  align-items: center; 
+  
+  /* Ensure the button itself is centered in the menu */
+  margin: 0 auto; 
+  text-align: center;
+}
   
   /* Modal Adjustments */
   .modal-content { margin: 10% 5%; width: 90%; max-height: 80vh; }
