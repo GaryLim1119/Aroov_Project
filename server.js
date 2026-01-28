@@ -10,8 +10,8 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
-
-
+const { OAuth2Client } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
 
 // --- CLOUDINARY IMPORTS ---
 const cloudinary = require('cloudinary').v2;
@@ -222,47 +222,79 @@ app.get('/logout', (req, res, next) => {
     req.logout((err) => { if (err) return next(err); res.redirect('/'); });
 });
 
-
-// --- ADD THIS TO SERVER.JS FOR FLUTTER ---
-// A new route: POST /api/auth/google/native
+const GOOGLE_CLIENT_ID = "210689726347-q6jcthta2sroh2utl0qm1h78smkfor6l.apps.googleusercontent.com";
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+// --- FLUTTER GOOGLE NATIVE LOGIN ROUTE ---
+// --- THE NEW ROUTE (Put this with your other app.post routes) ---
 app.post('/api/auth/google/native', async (req, res) => {
   const { idToken } = req.body;
 
-  // 1. Verify the token with Google libraries
-  const ticket = await client.verifyIdToken({
-      idToken: idToken,
-      audience: 210689726347-q6jcthta2sroh2utl0qm1h78smkfor6l.apps.googleusercontent.com,
-  });
-  const payload = ticket.getPayload();
+  try {
+    // 1. Verify the token with Google
+    const ticket = await client.verifyIdToken({
+        idToken: idToken,
+        audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    
+    // Get user info from Google
+    const email = payload.email;
+    const name = payload.name;
+    const picture = payload.picture;
+    const googleId = payload.sub;
 
-  // 2. Find or Create User in your Database
-  let user = await User.findOne({ email: payload.email });
-  
-  // 3. Return a Session Token (JWT) to the Flutter App
-  const appToken = createJwt(user);
-  res.json({ token: appToken, user: user });
-});
+    // 2. Check Database (SQL / TiDB)
+    // NOTE: Make sure your database variable is named 'db'. If it is 'pool', change 'db' to 'pool'.
+    const [rows] = await db.promise().query('SELECT * FROM users WHERE email = ?', [email]);
+    
+    let user = null;
 
-app.post('/api/mobile-login', (req, res, next) => {
-    passport.authenticate('local', (err, user, info) => {
-        if (err) return next(err);
-        if (!user) return res.status(401).json({ error: "Invalid credentials" });
+    if (rows.length > 0) {
+        // User exists -> Log them in
+        user = rows[0];
+        // Optional: Update picture
+        await db.promise().query('UPDATE users SET google_id = ?, picture = ? WHERE email = ?', [googleId, picture, email]);
+    } else {
+        // User does NOT exist -> Create them
+        console.log("Creating new user from Google:", email);
+        const insertSql = 'INSERT INTO users (name, email, role, picture, google_id) VALUES (?, ?, ?, ?, ?)';
+        
+        // Default role is 'user'
+        const [result] = await db.promise().query(insertSql, [name, email, 'user', picture, googleId]);
+        
+        // Get the new user ID
+        const [newUserRows] = await db.promise().query('SELECT * FROM users WHERE id = ?', [result.insertId]);
+        user = newUserRows[0];
+    }
 
-        req.logIn(user, (err) => {
-            if (err) return next(err);
-            // SUCCESS: Return JSON instead of redirecting
-            return res.json({ 
-                status: "success", 
-                user: {
-                    id: user.user_id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    picture: user.picture
-                }
-            });
-        });
-    })(req, res, next);
+    // 3. Create Token (JWT)
+    const appToken = jwt.sign(
+        { 
+            id: user.id || user.user_id, // Handle different ID column names
+            email: user.email, 
+            role: user.role 
+        },
+        process.env.JWT_SECRET || 'your_secret_key', 
+        { expiresIn: '30d' }
+    );
+
+    // 4. Send response to Flutter
+    res.json({ 
+      success: true, 
+      token: appToken, 
+      user: {
+          id: user.id || user.user_id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          picture: user.picture
+      } 
+    });
+
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(401).json({ success: false, message: "Invalid Google Token" });
+  }
 });
 // =========================================================
 // --- 🆕 PROFILE, UNIVERSITIES & CALENDAR APIs ---
