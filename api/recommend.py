@@ -67,13 +67,22 @@ class handler(BaseHTTPRequestHandler):
 
             for dest in destinations:
                 try:
-                    # --- SCORE 1: TAG MATCHING (60% Weight) ---
+                    # --- SCORE 1: TAG MATCHING (55% Weight) ---
                     d_type = str(dest.get('type') or "")
-                    d_state = str(dest.get('state') or "")
-                    d_name = str(dest.get('name') or "")
                     
-                    # Combine destination text for matching
-                    d_text = f"{d_type} {d_state} {d_name}".lower()
+                    # UPDATE: Grab specific tags from database if they exist
+                    # This ensures words like "Visit" or hidden keywords are counted
+                    d_tags_list = self._clean_list(dest.get('tags')) 
+                    d_tags_str = " ".join(d_tags_list)
+
+                    # We combine Type + Hidden Tags. 
+                    # Note: We removed d_name/d_state to focus on PURE interest matching.
+                    d_text = f"{d_type} {d_tags_str}".lower()
+                    
+                    # If d_text is empty, fallback to name to avoid crash
+                    if not d_text.strip():
+                        d_text = str(dest.get('name') or "").lower()
+
                     dest_vec = Counter(d_text.split())
 
                     # Cosine Similarity for Tags
@@ -85,7 +94,7 @@ class handler(BaseHTTPRequestHandler):
                     if mag_dest > 0:
                         tag_similarity = dot_product / (mag_group * mag_dest)
 
-                    # --- SCORE 2: PRICE MATCHING (40% Weight) ---
+                    # --- SCORE 2: PRICE MATCHING (45% Weight) ---
                     price_similarity = 0
                     try:
                         price = float(dest.get('price_min') or 0)
@@ -95,17 +104,13 @@ class handler(BaseHTTPRequestHandler):
                             price_similarity = 1.0
                         else:
                             # If expensive, score drops gradually. 
-                            # Formula: Budget / Price. 
-                            # Example: Budget 100, Price 200 -> Score 0.5
                             price_similarity = avg_max_budget / price
                             
-                            # Floor it at 0 to avoid negative errors
                             if price_similarity < 0: price_similarity = 0
                     except:
                         price_similarity = 0.5 # Default if price data is broken
 
                     # --- FINAL COMBINED SCORE ---
-                    # We give 55% importance to Activities/Tags and 45% to Budget
                     final_score = (tag_similarity * 0.55) + (price_similarity * 0.45)
 
                     # Store Result
