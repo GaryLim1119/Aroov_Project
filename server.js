@@ -224,6 +224,24 @@ app.get('/logout', (req, res, next) => {
 
 
 // --- ADD THIS TO SERVER.JS FOR FLUTTER ---
+// A new route: POST /api/auth/google/native
+app.post('/api/auth/google/native', async (req, res) => {
+  const { idToken } = req.body;
+
+  // 1. Verify the token with Google libraries
+  const ticket = await client.verifyIdToken({
+      idToken: idToken,
+      audience: 210689726347-q6jcthta2sroh2utl0qm1h78smkfor6l.apps.googleusercontent.com,
+  });
+  const payload = ticket.getPayload();
+
+  // 2. Find or Create User in your Database
+  let user = await User.findOne({ email: payload.email });
+  
+  // 3. Return a Session Token (JWT) to the Flutter App
+  const appToken = createJwt(user);
+  res.json({ token: appToken, user: user });
+});
 
 app.post('/api/mobile-login', (req, res, next) => {
     passport.authenticate('local', (err, user, info) => {
