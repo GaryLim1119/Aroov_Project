@@ -435,7 +435,7 @@ function calculateBestDates(events) {
 // ==========================================
 // 8. MODAL ACTIONS
 // ==========================================
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function openGroupModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 async function submitCreateGroup() {

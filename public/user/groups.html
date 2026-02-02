@@ -65,7 +65,7 @@
         <div class="group-sidebar">
             <div class="sidebar-header">
                 <h3>My Groups</h3>
-                <button onclick="openModal('modalCreate')" class="btn-small" title="Create Group">+</button>
+                <button onclick="openGroupModal('modalCreate')" class="btn-small" title="Create Group">+</button>
             </div>
             <div id="groupList" class="group-list">
                 <p class="loading-text">Loading groups...</p>
@@ -80,8 +80,8 @@
                     <span id="groupMemberCount" style="color:#777; font-size:14px;"></span>
                 </div>
                 <div class="group-actions" id="groupActions" style="display:none;">
-                    <button class="btn-secondary" onclick="openModal('modalEdit')">✏️ Edit</button>
-                    <button class="btn-delete" onclick="openModal('modalDelete')">🗑️ Delete</button>
+                    <button class="btn-secondary" onclick="openGroupModal('modalEdit')">✏️ Edit</button>
+                    <button class="btn-delete" onclick="openGroupModal('modalDelete')">🗑️ Delete</button>
                 </div>
             </div>
 
@@ -128,7 +128,7 @@
             <div id="tab-members" class="tab-pane" style="display:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h3 style="margin:0;">Group Members</h3>
-                    <button class="btn-primary" onclick="openModal('modalInvite')">+ Invite Friend</button>
+                    <button class="btn-primary" onclick="openGrpoupModal('modalInvite')">+ Invite Friend</button>
                 </div>
                 
                 <table class="member-table">
