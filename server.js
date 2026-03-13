@@ -233,7 +233,7 @@ app.post('/api/auth/google/native', async (req, res) => {
     // 1. Verify the token with Google
     const ticket = await client.verifyIdToken({
         idToken: idToken,
-        audience: GOOGLE_CLIENT_ID,
+        audience: "210689726347-2tf1tlastg4i4107jijpmcgv7aitnn8f.apps.googleusercontent.com",
     });
     const payload = ticket.getPayload();
     
