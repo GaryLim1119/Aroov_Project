@@ -95,15 +95,55 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage: storage });
 
 function isAuthenticated(req, res, next) {
-    // Check if user is logged in via session
+    // 1. Check if user is logged in via session (Web)
     if (req.session && req.session.user) {
         return next();
     }
+    
+    // 2. Check for Authorization Bearer Token (Mobile)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
+            req.user = decoded; // Attach full user payload to request
+            return next();
+        } catch (error) {
+            console.error("JWT Verification Failed:", error.message);
+            // Allow fall-through to 401 response below
+        }
+    }
+
+    // 3. Fallbacks
+    if (req.path.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.redirect('/login');
+}
+
+// Middleware to protect standard web routes using Passport 
+function checkAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) return next();
+    
+    // Also accept Bearer Tokens for mobile accessing route paths expecting this middleware
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
+            req.user = decoded;
+            return next();
+        } catch (error) {
+            console.error("JWT Verification Failed:", error.message);
+            // Allow fall-through
+        }
+    }
+    
     // If this is an API request (starts with /api/), send JSON error
     if (req.path.startsWith('/api/')) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
-    // Otherwise redirect to login page
+
     res.redirect('/login');
 }
 
@@ -178,12 +218,6 @@ app.get('/', (req, res) => {
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'auth', 'login.html'));
 });
-
-// Middleware to protect routes
-function checkAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) return next();
-    res.redirect('/login');
-}
 
 app.get('/admin', checkAuthenticated, (req, res) => {
     if (req.user.role === 'admin') res.sendFile(path.join(__dirname, 'public/admin/index.html'));
